@@ -1,0 +1,10 @@
+{
+	"bot_settings": {
+		"token": "",
+		"name": "bot"
+	},
+	"admin_settings": {
+		"token": "",
+		"name": "admin"
+	}
+}

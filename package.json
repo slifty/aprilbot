@@ -1,0 +1,24 @@
+{
+  "name": "aprilbot",
+  "version": "0.0.0",
+  "description": "A Slack bot for legitimate purposes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slifty/aprilbot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/slifty/aprilbot/issues"
+  },
+  "homepage": "https://github.com/slifty/aprilbot#readme",
+  "dependencies": {
+    "jsonfile": "^2.4.0",
+    "require-directory": "^2.1.1",
+    "slackbots": "^1.0.2"
+  }
+}
