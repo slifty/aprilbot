@@ -23,7 +23,7 @@ var update_settings = function(old_settings, command_pieces) {
         settings["replacement"] = helpers.get_parameter(parameters, 0);
 
         // Remove underscores from combined emoji
-        settings["replacement"].replace(":_:", ": :");
+        settings["replacement"] = settings["replacement"].replace(":_:", ": :");
     }
     return settings;
 }

@@ -11,7 +11,7 @@ var get_blank_settings = function() {
  * Takes the old settings and parameters, updates settings and returns the new value
  */
 var update_settings = function(old_settings, parameters) {
-	return {};
+	return old_settings;
 }
 
 /**
