@@ -4,7 +4,9 @@ var helpers = require('../helpers.js');
  * Returns the base / empty state for user settings
  */
 var get_blank_settings = function() {
-	return {};
+	return {
+		"letters": ""
+	};
 }
 
 /**
@@ -14,6 +16,15 @@ var update_settings = function(old_settings, command_pieces) {
     var user = command_pieces.user;
     var command = command_pieces.command;
     var parameters = command_pieces.parameters;
+
+    var letters = "";
+	if(helpers.get_parameter(parameters,0) == "all") {
+		letters = "abcdefghijklmnopqrstuvwxyz";
+	} else {
+		letters = parameters.join("").split('').filter(function(item, i, ar){ return ar.indexOf(item) === i; }).join("");
+	}
+
+	old_settings["letters"] = letters;
 	return old_settings;
 }
 
@@ -21,7 +32,17 @@ var update_settings = function(old_settings, command_pieces) {
  * Takes a message and settings, updates the message
  */
 var modify_message = function(message, settings) {
-	return message;
+	var tronc_text = [];
+	var text = message.text;
+	for(var i = 0; i < text.length; i++) {
+		if(settings["letters"].indexOf(text[i]) != -1) {
+			tronc_text.push(":tronc_" + text[i] + ":");
+		} else {
+			tronc_text.push(text[i]);
+		}
+	}
+	message.text = tronc_text.join("");
+	return message;	
 }
 
 module.exports = {

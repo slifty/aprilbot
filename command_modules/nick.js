@@ -16,9 +16,8 @@ var update_settings = function(old_settings, command_pieces) {
     var user = command_pieces.user;
     var command = command_pieces.command;
     var parameters = command_pieces.parameters;
-    
-	var settings = old_settings;
 
+	var settings = old_settings;
     if(helpers.get_parameter(parameters, 0) != "") {
         settings["replacement"] = helpers.get_parameter(parameters, 0);
 
