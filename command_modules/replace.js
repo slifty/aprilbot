@@ -53,7 +53,7 @@ var modify_message = function(message, settings) {
 		var pair = settings["pairs"][x];
 		switch(pair["type"]) {
 			case "regex":
-				var expression = RegExp(pair["value"]["source"], "i");
+				var expression = RegExp(pair["value"]["source"], "gi");
 				message.text = message.text.replace(expression, pair["value"]["replacement"]);
 				break;
 			case "basic":
