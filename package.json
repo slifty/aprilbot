@@ -4,7 +4,7 @@
   "description": "A Slack bot for legitimate purposes",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "./node_modules/mocha/bin/mocha"
   },
   "engines": {
     "node": ">= 5.9.1"
