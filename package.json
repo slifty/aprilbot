@@ -4,7 +4,7 @@
   "description": "A Slack bot for legitimate purposes",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "engines": {
     "node": ">= 5.9.1"
@@ -19,6 +19,10 @@
     "url": "https://github.com/slifty/aprilbot/issues"
   },
   "homepage": "https://github.com/slifty/aprilbot#readme",
+  "devDependencies": {
+    "chai": "^3.0.0",
+    "mocha": "^2.2.5"
+  },
   "dependencies": {
     "jsonfile": "^2.4.0",
     "require-directory": "^2.1.1",
