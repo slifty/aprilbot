@@ -115,8 +115,8 @@ function delete_message(message) {
 
 function send_message(channel, text) {
     bot._api('chat.postMessage', {
-        "token": settings.token,
-        "channel": message.channel,
+        "token": bot_settings.token,
+        "channel": channel,
         "text": text
     });
 }

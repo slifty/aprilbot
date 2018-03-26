@@ -18,7 +18,7 @@ var update_settings = function(old_settings, command_pieces) {
     var parameters = command_pieces.parameters;
     
 	var settings = old_settings;
-    settings["terms"].push(" " + helpers.combine_parameters(parameters,0));
+    settings["terms"] = [" " + helpers.combine_parameters(parameters,0)];
 	return settings;
 }
 

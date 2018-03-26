@@ -34,8 +34,9 @@ var update_settings = function(old_settings, command_pieces) {
 var modify_message = function(message, settings) {
 	var tronc_text = [];
 	var text = message.text;
+
 	for(var i = 0; i < text.length; i++) {
-		if(settings["letters"].indexOf(text[i]) != -1) {
+		if(settings["letters"].indexOf(text[i].toLowerCase()) != -1) {
 			tronc_text.push(":tronc_" + text[i] + ":");
 		} else {
 			tronc_text.push(text[i]);

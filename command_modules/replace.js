@@ -23,23 +23,23 @@ var update_settings = function(old_settings, command_pieces) {
 	var parameter_string = parameters.join(" ");
 	var check_results = parameter_string.match(/(\/.*\/)\s(.*)/);
 	if(check_results) {
-		old_settings["pairs"].push({
+		old_settings["pairs"] = [{
 			"type": "regex",
 			"value": {
 				"source": check_results[1].slice(1,-1),
 				"replacement": check_results[2],
 			}
-		});
+		}];
 	} else if (parameters.length > 2) {
 		var term = helpers.get_parameter(parameters, 0);
 		var replacement = helpers.combine_parameters(parameters,1);
-		old_settings["pairs"].push({
+		old_settings["pairs"] =[{
 			"type": "basic",
 			"value": {
 				"source": check_results[1],
 				"replacement": check_results[2],
 			}
-		});
+		}];
 	}
 
 	return old_settings;
@@ -53,8 +53,13 @@ var modify_message = function(message, settings) {
 		var pair = settings["pairs"][x];
 		switch(pair["type"]) {
 			case "regex":
-				var expression = RegExp(pair["value"]["source"], "i");
-				message.text = message.text.replace(expression, pair["value"]["replacement"]);
+				try {
+					var expression = RegExp(pair["value"]["source"], "i");
+					message.text = message.text.replace(expression, pair["value"]["replacement"]);
+				} catch(e) {
+					console.log("Invalid RegEx");
+					console.log(pair);
+				}
 				break;
 			case "basic":
 				message.text = message.text.replace(pair["value"]["source"], pair["value"]["replacement"]);
