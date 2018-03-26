@@ -1,7 +1,7 @@
 var Bot = require('slackbots');
 var jsonfile = require('jsonfile')
 var command_modules = require('./command_modules');
-
+var sha1 = require('sha1');
 
 ///////////////////////////
 // Set things up to save settings
@@ -20,6 +20,62 @@ function save_settings() {
         }
     });
 }
+
+///////////////////////////
+// Set things up to save threadcoin
+var threadcoins_file = 'threadcoins.json'
+var threadcoins = {};
+jsonfile.readFile(threadcoins_file, function(err, obj) {
+    if(!err) {
+        threadcoins = obj;
+    }
+})
+
+function save_threadcoins() {
+    jsonfile.writeFile(threadcoins_file, threadcoins, {spaces: 2}, function(err) {
+        if(err) {
+            console.error(err);
+        }
+    });
+}
+
+
+///////////////////////////
+// Set things up to grant threadcoin
+var currentBlock = {}
+function process_block() { 
+    console.log("processing block");
+    var keys = Object.keys(currentBlock)
+    
+    // If nobody contributed, nobody gets a coin
+    if(keys.length == 0) return;
+
+    // Randomly give a coin to someone
+    var user = currentBlock[keys[ keys.length * Math.random() << 0]];
+    award_threadcoin(user);
+}
+
+function add_to_block(message, user) {
+    var hash = sha1(message);
+    currentBlock[hash] = user;
+}
+
+function reset_block() {
+    currentBlock = {};
+}
+
+function award_threadcoin(user) {
+    console.log("awarding threadcoin to... " + user)
+    if(user in threadcoins) {
+        threadcoins[user] += 1;
+    } else {
+        threadcoins[user] = 1;
+    }
+    reset_block();
+    save_threadcoins();
+}
+
+setInterval(process_block, 6000);
 
 ///////////////////////////
 // Create the bots
@@ -121,51 +177,27 @@ function send_message(channel, text) {
     });
 }
 
+function is_the_thread(message) {
+    return ('thread_ts' in message
+      && message.thread_ts == '1488917437.000402');
+}
+
 ///////////////////////////
 // Process every message on slack
 bot.on('message', function(message) {
+
+    if(is_the_thread(message)) {
+        add_to_block(message.text, message.user);
+    }
+
     if(should_process_this_message(message)) {
 
         // First, delete the original message
-        delete_message(message);
+        // delete_message(message);
 
         // Check if a command was issued
         if(is_command(message.text)) {
             process_command(message);
         }
-
-        // Look up the user by name
-        bot._api('users.info', {
-            "token": admin_settings.token,
-            "user": message.user
-        }).done(function(data) {
-            var user = data.user.name;
-            var final_message = message;
-            final_message.user = user;
-
-            // We don't run special processes on commands
-            if(!is_command(message.text)) {
-                
-                // Run all relevant commands
-                if(user in user_settings) {
-                    for(command in user_settings[user]) {
-                        if(command in command_modules) {
-                            final_message = command_modules[command].modify_message(final_message, user_settings[user][command]);
-                        }
-                    }
-                }
-            }
-
-            // Send the message
-            var user = final_message.user;
-            var text = final_message.text;
-            var channel = final_message.channel;
-            text = "<" + user + "> " + text;
-            bot._api('chat.postMessage', {
-                "token": bot_settings.token,
-                "channel": channel,
-                "text": text
-            });
-        });
     }
 });
