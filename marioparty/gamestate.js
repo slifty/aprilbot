@@ -1,17 +1,19 @@
 var spaces = require('./spaces');
 var jsonfile = require('jsonfile')
+var path = require('path');
+var appDir = path.dirname(require.main.filename);
 
 function GameState(statefile) {
     this.gameState = {
-        players: {},
-        spaces: [],
-        activeSpace: 0
+        players: {}
     }
+
+    this.spaces = [];
+    this.activeSpace = 0;
 
     this.generateSpace = function() {
         var newSpace = new spaces.blue.Space();
-        console.log(this);
-        this.gameState.spaces.push(newSpace);
+        this.spaces.push(newSpace);
         this.saveState();
         return newSpace;
     }
@@ -68,14 +70,19 @@ function GameState(statefile) {
 
     // Return a list of generated spaces
     this.getSpaces = function() {
-        return this.gameState.spaces;
+        return this.spaces;
     }
 
-    jsonfile.readFile(statefile, function(err, obj) {
-        if(!err && obj != {}) {
+    try {
+        obj = jsonfile.readFileSync(appDir + "/" + statefile);
+        console.log(obj);
+        if(obj != {}) {
             this.gameState = obj;
+            console.log(this.gameState);
         }
-    })
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 module.exports.GameState = GameState
