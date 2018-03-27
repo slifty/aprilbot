@@ -1,10 +1,12 @@
+var gameState;
+
 /**
  * Anything this space needs to initialize
  */
-var init = function(gamestate) {
+var init = function(_gameState) {
+    gameState = _gameState;
     return;
 }
-
 /**
  * Weight of this space appearing (1 = low, can go as high as you want!)
  */
@@ -23,19 +25,19 @@ var get_icon = function() {
 /**
  * What happens when a player lands on this space
  *
- * Returns updated game state
+ * Returns a message to be rendered
  */
-var land_effect = function(message, gamestate) {
-    return gamestate;
+var land_effect = function(message) {
+    return '';
 }
 
 /**
  * What happens when a player passes this space
  *
- * Returns updated game state
+ * Returns a message to be rendered
  */
-var pass_effect = function(message, gamestate) {
-    return gamestate;
+var pass_effect = function(message) {
+    return '';
 }
 
 module.exports = {

@@ -1,7 +1,12 @@
 var Bot = require('slackbots');
 var jsonfile = require('jsonfile')
 var command_modules = require('./command_modules');
+var marioparty = require('./marioparty');
 var sha1 = require('sha1');
+
+var the_thread = '1488917437.000402';
+// var marioparty_channel = 'C02JZTC78'; // #general
+var marioparty_channel = 'G99E4G58X';
 
 ///////////////////////////
 // Set things up to save settings
@@ -74,8 +79,6 @@ function award_threadcoin(user) {
     reset_block();
     save_threadcoins();
 }
-
-setInterval(process_block, 6000);
 
 ///////////////////////////
 // Create the bots
@@ -179,25 +182,77 @@ function send_message(channel, text) {
 
 function is_the_thread(message) {
     return ('thread_ts' in message
-      && message.thread_ts == '1488917437.000402');
+      && message.thread_ts == the_thread);
+}
+
+function is_marioparty_channel(message) {
+    return (message.type == 'message'
+         && message.channel == marioparty_channel)
+}
+
+///////////////////////////
+// Jail
+function is_illegal_message(message) {
+    return false;
+}
+
+function punish_them(message) {
+
+}
+
+
+///////////////////////////
+// MARIO PARTY!
+
+function marioparty_turn(message) {
+    var roll = marioparty.rollDice();
+}
+
+function start_marioparty() {
+    for(var x=0; x<10; x++) {
+        marioparty.getGameState().generateSpace();
+    }
+    var spaces = marioparty.getGameState().getSpaces();
+    var message = '';
+    for(var x in spaces) {
+        message = message + ':' + spaces[x].getIcon() + ':';
+    }
+    send_message(marioparty_channel, message);
 }
 
 ///////////////////////////
 // Process every message on slack
 bot.on('message', function(message) {
 
-    if(is_the_thread(message)) {
-        add_to_block(message.text, message.user);
-    }
+    console.log(message);
 
     if(should_process_this_message(message)) {
+        
+        // Did the message violate laws?
+        if(is_illegal_message(message)) {
+            delete_message(message);
+            punish_them(message);
+        }
 
-        // First, delete the original message
-        // delete_message(message);
+        if(is_the_thread(message)) {
+            add_to_block(message.text, message.user);
+        }
+
+        // Is the user playing mario party?
+        if(is_marioparty_channel(message)) {
+            marioparty_turn(message);
+        }
 
         // Check if a command was issued
         if(is_command(message.text)) {
-            process_command(message);
+            marioparty_ability(message);
         }
     }
 });
+
+start_marioparty();
+
+
+
+// Grant a block every 5 minutes
+setInterval(process_block, 30000);

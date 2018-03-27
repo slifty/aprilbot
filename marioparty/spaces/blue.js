@@ -1,47 +1,64 @@
-/**
- * Anything this space needs to initialize
- */
-var init = function(gamestate) {
-    return;
+var gameState;
+
+function Space(gameState) {
+    this.coins = 0;
+    this.gameState = gameState;
+
+    // Are coins going to randomly appear?
+    if(Math.random() * 100 < 50) {
+        this.coins = Math.ceil(Math.random() * 3);
+    }
+
+    /**
+     * What should the space's icon be?
+     * NOTE: omit the wrapping :'s (so 'tinkfase' rather than ':tinkfase:')
+     */
+    this.getIcon = function() {
+        if(this.coins > 0)
+            return 'coin';
+        return 'large_blue_circle';
+    }
+
+    /**
+     * What happens when a player lands on this space
+     *
+     * Returns a message to be rendered
+     */
+    this.landEffect = function(message) {
+        var user = message.user;
+        this.gameState.addCoins(user, 3);
+        var playerState = this.gameState.getPlayerState(user);
+        return '{user} landed on a blue space and got 3 coins! (' + playerState.coins + ' total)';
+    }
+
+    /**
+     * What happens when a player passes this space
+     *
+     * Returns a message to be rendered
+     */
+    this.passEffect = function(message) {
+        if(this.coins > 0) {
+            this.gameState.addCoins(user, coins);
+            var playerState = this.gameState.getPlayerState(user);
+            return '{user} picked up ' + this.coins + ' coin' + (this.coins==1?'':'s') + ' along the way (' + playerState.coins + ' total)';
+            this.coins = 0;
+        }
+        return '';
+    }
+    
 }
+
 
 /**
  * Weight of this space appearing (1 = low, can go as high as you want!)
  */
-var get_weight = function() {
+
+function getWeight() {
     return 1;
 }
-
-/**
- * What should the space's icon be?
- * NOTE: omit the wrapping :'s (so 'tinkfase' rather than ':tinkfase:')
- */
-var get_icon = function() {
-    return 'marioparty3';
-}
-
-/**
- * What happens when a player lands on this space
- *
- * Returns updated game state
- */
-var land_effect = function(message, gamestate) {
-    return gamestate;
-}
-
-/**
- * What happens when a player passes this space
- *
- * Returns updated game state
- */
-var pass_effect = function(message, gamestate) {
-    return gamestate;
-}
+Space.prototype.getWeight = getWeight;
 
 module.exports = {
-    "init": init,
-    "get_weight": get_weight,
-    "get_icon": get_icon,
-    "land_effect": land_effect,
-    "pass_effect": pass_effect
-}
+    "Space": Space,
+    "weight": getWeight()
+};
