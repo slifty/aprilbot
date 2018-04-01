@@ -4,6 +4,8 @@ var helpers = require('../helpers.js');
  * Returns the base / empty state for user settings
  */
 var prepare_settings = function(settings) {
+    if(!("threadcoin" in settings))
+        settings["threadcoin"] = 0;
     return settings;
 }
 
@@ -13,18 +15,8 @@ var prepare_settings = function(settings) {
  */
 var invoke_module = function(user, settings, parameters, ignore_cost) {
     prepare_settings(settings);
-    var message = '<@' + user + '> Asked for help!\n\r\
-One threadcoin is granted per minute, randomly to a user who contributed in the thread block.\n\r\
-`!change_name` changes your name.\n\r\
-`!pray` offers a prayer to the gods.\n\r\
-`!convert_timecoin` converts timecoin to threadcoin.\n\r\
-`!buy {emoji} {amount}` buys rights to emoji\n\r\
-`!count` tells you what you have\n\r\
-`!listemoji` shows who owns what emoji\n\r\
-`!leaderboard` shows the leaderboard\n\r\
-Once you have 11 threadcoin you can talk outside of the thread.\n\r\
-If someone violates your emoji rights, they have to pay you a threadcoin.';
-
+    var message = '';
+    message = "<@" + user + "> asked for the emoji market.";
     return {
         "settings": settings,
         "message": message

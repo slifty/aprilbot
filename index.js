@@ -78,8 +78,43 @@ function save_normality() {
     }
 }
 
-function post_leaderboard() {
+function leaderboard() {
+    var message = '';
+    var users = [];
+    for(var user in user_settings) {
+        var count = get_threadcoin(user);
+        if(count == 0)
+            continue;
 
+        users.push({
+            id: user,
+            count: count
+        })
+    }
+
+    users.sort(function(a,b) {
+        var comparison = 0;
+        if (a.count < b.count) {
+            comparison = 1;
+        } else if (b.count < a.count) {
+            comparison = -1;
+        }
+        return comparison;
+    });
+    for(var x in users) {
+        message += "<@" + users[x].id + "> :: " + users[x].count + "\n\r";
+    }
+
+    return message;
+}
+
+function listemoji() {
+    var message = '';
+    var users = {}
+    for(term in term_market) {
+        message += ":" + term + ": - " + term_market[term].amount + " (<@" + term_market[term].user + ">) \n\r";
+    }
+    return message;
 }
 
 ///////////////////////////
@@ -93,13 +128,24 @@ function process_block() {
     if(keys.length == 0) return;
 
     // Randomly give a coin to someone
-    var user = currentBlock[keys[ keys.length * Math.random() << 0]];
-    award_threadcoin(user);
+    var hash = currentBlock[keys[ keys.length * Math.random() << 0]];
+    var user = hash.user;
+    var message = hash.message;
+    var stripped_message = hash.message.replace(/\W/g, '');
+    // if(stripped_message in term_market) {
+    //     send_message(general_channel, invoke_command(user, "grant_threadcoin", [term_market[stripped_message].amount], true) + hash.message);
+    // } else {
+        send_message(general_channel, invoke_command(user, "grant_threadcoin", ["1"], true) + " -- `" + hash.message + "`");
+    //}
+    reset_block();
 }
 
 function add_to_block(message, user) {
     var hash = sha1(message);
-    currentBlock[hash] = user;
+    currentBlock[hash] = {
+        user: user,
+        message: message
+    };
 }
 
 function reset_block() {
@@ -110,7 +156,6 @@ function award_threadcoin(user) {
     if(is_cultist(user, "thread")) {
         send_message(general_channel, invoke_command(user, "grant_threadcoin", ["2"], true));
     } else {
-        send_message(general_channel, invoke_command(user, "grant_threadcoin", ["1"], true));
     }
     reset_block();
 }
@@ -195,6 +240,18 @@ function invoke_command(user, command, parameters, ignore_cost) {
         // Save reality
         save_settings();
 
+        // Hard coded, but whatever.
+        if(command == "change_name") {
+            change_alias(user, user_settings[user]["name"]);
+        }
+
+        if(command == "listemoji") {
+            module_response.message += "\n\r" + listemoji();
+        }
+        if(command == "leaderboard") {
+            module_response.message += "\n\r" + leaderboard();
+        }
+
         return module_response.message;
     } else {
         return "'" + command + "' is not a valid command.";
@@ -256,37 +313,26 @@ function update_reality() {
             var coins = get_threadcoin(user);
             if(coins <= 10) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_scum"], true));
-                change_alias(message.user, 'thread_scum');
             } else if(coins < 25) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_peon"], true));
-                change_alias(message.user, 'thread_peon');
             } else if(coins < 50) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_minion"], true));
-                change_alias(message.user, 'thread_minion');
             } else if(coins < 75) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_soldier"], true));
-                change_alias(message.user, 'thread_soldier');
             } else if(coins < 100) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_warrior"], true));
-                change_alias(message.user, 'thread_warrior');
             } else if(coins < 150) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_strategist"], true));
-                change_alias(message.user, 'thread_strategist');
             } else if(coins < 200) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_spy"], true));
-                change_alias(message.user, 'thread_spy');
             } else if(coins < 250) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_emojimancer"], true));
-                change_alias(message.user, 'thread_emojimancer');
             } else if(coins < 300) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_minter"], true));
-                change_alias(message.user, 'thread_minter');
             } else if(coins < 500) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_president"], true));
-                change_alias(message.user, 'thread_president');
             } else if(coins < 1000) {
                 send_message(general_channel, invoke_command(user, "change_name", ["thread_god"], true));
-                change_alias(message.user, 'thread_god');
             } 
         } else {
             // If you are pledged to the thread, you give up all material posessions
@@ -387,7 +433,6 @@ function check_emojiright_violation(message) {
             } else {
                 send_message(message.channel, "> <@" + message.user + "> can't pay, and is being sent to jail.");
                 send_message(message.channel, invoke_command(message.user, "change_name", ['thief'], true));
-                change_alias(message.user, 'thief');
                 send_message(message.channel, invoke_command(message.user, "jail", [true], true));
             }
             return true;
@@ -408,7 +453,6 @@ function check_cult_violation(message) {
     && is_the_thread(message)) {
         send_message(message.channel, "<@" + message.user + "> has turned their back on The Thread but tried to post in it. Shame.");
         invoke_command(message.user, "change_name", ['heathen'], true)
-        change_alias(message.user, 'heathen');
         return true;
     }
 }
@@ -418,7 +462,7 @@ function jailbreak() {
     for(var user in user_settings) {
         if(is_prisoner(user)) {
             if(announcement == false) {
-                send_message(general_channel, "JAILBREAK!!!!");
+                send_message(general_channel, "JAILBREAK!!!! (if you were in jail, you are free)");
                 announcement = true;
             }
             send_message(general_channel, invoke_command(user, "jail", [false], true));
@@ -452,7 +496,7 @@ bot.on('message', function(message) {
         
         // Is the person in jail?
         if(is_prisoner(message.user)) {
-            send_message(message.channel, "<@" + message.user + "> tried to talk, but they are in jail.");
+            send_message(message.channel, "<@" + message.user + "> tried to talk, but they are in jail. (You have to wait a minute)");
             delete_message(message);
             return;
         }
@@ -468,7 +512,7 @@ bot.on('message', function(message) {
         && !is_the_thread(message)
         && !is_cultist(message.user, "antithread")) {
             delete_message(message);
-            send_message(message.channel, "<@" + message.user + "> tried to talk in a place they do not know.  They only know The Thread (https://thegpf.slack.com/archives/C04C4MK6T/p1488917437000402).");
+            send_message(message.channel, "<@" + message.user + "> tried to talk in a place they do not know.  (post in The Thread -- https://thegpf.slack.com/archives/C04C4MK6T/p1488917437000402).");
             return;
         }
 
@@ -510,11 +554,12 @@ setInterval(process_block, 60000);
 // Save reality every minute
 setInterval(save_settings, 60000);
 
-// Grant a timecoin every 20 minutes
-setInterval(award_timecoins, 1200000);
+// Grant a timecoin every 40 minutes
+setInterval(award_timecoins, 2400000);
 
 // Free from jail every minute
 setInterval(jailbreak, 6000);
 
 // Impose reality every 10 minutes
 setInterval(impose_reality, 600000);
+impose_reality();
