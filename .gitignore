@@ -2,4 +2,5 @@ user_settings.json
 threadcoin.json
 game_state.json
 config.json
+normality.json
 node_modules/*

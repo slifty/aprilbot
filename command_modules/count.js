@@ -4,6 +4,8 @@ var helpers = require('../helpers.js');
  * Returns the base / empty state for user settings
  */
 var prepare_settings = function(settings) {
+    if(!("threadcoin" in settings))
+        settings["threadcoin"] = 0;
     return settings;
 }
 
@@ -11,9 +13,10 @@ var prepare_settings = function(settings) {
  * Takes the old settings and parameters, updates settings and returns the new value
  * It also is responsible for calling the Slack API to make any slack-side changes
  */
-var invoke_module = function(settings, parameters) {
+var invoke_module = function(user, settings, parameters, ignore_cost) {
     prepare_settings(settings);
     var message = '';
+    message = "<@" + user + "> has " + settings["threadcoin"] + " threadcoin.";
     return {
         "settings": settings,
         "message": message
