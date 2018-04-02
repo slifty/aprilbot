@@ -6,8 +6,9 @@ var sha1 = require('sha1');
 var fs = require('fs');
 
 var the_thread = '1488917437.000402';
-var general_channel = 'C02JZTC78'; // #general
+// var general_channel = 'C02JZTC78'; // #general
 //var general_channel = 'G99E4G58X'; // test room
+var general_channel = 'C9Z3QHTEG' // #threadcoin
 
 ///////////////////////////
 // Set things up to save settings
@@ -78,6 +79,29 @@ function save_normality() {
     }
 }
 
+function load_normality() {
+    if(fs.existsSync(normality_file)) {
+        jsonfile.readFile(normality_file, function(err, obj) {
+            if(!err) {
+                for(var x in obj.members) {
+                    var user = obj.members[x];
+                    if(get_name(user.id) == "an_innocent") {
+                        invoke_command(user.id, "change_name", [user.name], true, true);
+                        console.log(user.id);
+                    } else {
+                        console.log(user.id);
+                        console.log(get_name(user.id));
+                    }
+                }
+                update_reality();
+                impose_reality();
+            } else {
+                console.log(err);
+            }
+        });
+    }
+}
+
 function leaderboard() {
     var message = '';
     var users = [];
@@ -102,7 +126,7 @@ function leaderboard() {
         return comparison;
     });
     for(var x in users) {
-        message += "<@" + users[x].id + "> :: " + users[x].count + "\n\r";
+        message += "`" + get_name(users[x].id) + "` :: " + users[x].count + "\n\r";
     }
 
     return message;
@@ -112,16 +136,17 @@ function listemoji() {
     var message = '';
     var users = {}
     for(term in term_market) {
-        message += ":" + term + ": - " + term_market[term].amount + " (<@" + term_market[term].user + ">) \n\r";
+        message += ":" + term + ": - " + term_market[term].amount + " (" + get_name(term_market[term].user) + ") \n\r";
     }
     return message;
 }
+
+
 
 ///////////////////////////
 // Set things up to grant threadcoin
 var currentBlock = {}
 function process_block() { 
-    console.log("processing block");
     var keys = Object.keys(currentBlock)
     
     // If nobody contributed, nobody gets a coin
@@ -135,7 +160,11 @@ function process_block() {
     // if(stripped_message in term_market) {
     //     send_message(general_channel, invoke_command(user, "grant_threadcoin", [term_market[stripped_message].amount], true) + hash.message);
     // } else {
+    if(is_cultist(user, "thread")) {
+        send_message(general_channel, invoke_command(user, "grant_threadcoin", ["2"], true) + " -- `" + hash.message + "`");
+    } else {
         send_message(general_channel, invoke_command(user, "grant_threadcoin", ["1"], true) + " -- `" + hash.message + "`");
+    }
     //}
     reset_block();
 }
@@ -156,6 +185,7 @@ function award_threadcoin(user) {
     if(is_cultist(user, "thread")) {
         send_message(general_channel, invoke_command(user, "grant_threadcoin", ["2"], true));
     } else {
+        send_message(general_channel, invoke_command(user, "grant_threadcoin", ["1"], true));
     }
     reset_block();
 }
@@ -218,7 +248,7 @@ function process_command(message) {
 }
 
 // This lets us run commands without messages being the trigger
-function invoke_command(user, command, parameters, ignore_cost) {
+function invoke_command(user, command, parameters, ignore_cost, no_followup) {
     // Check if this is a registered command
     if(command in command_modules) {
         // Check to see if the invoker can pay the cost
@@ -235,7 +265,9 @@ function invoke_command(user, command, parameters, ignore_cost) {
         user_settings[user] = module_response.settings;
 
         // Update reality
-        update_reality();
+        if(!no_followup) {
+            update_reality();
+        }
 
         // Save reality
         save_settings();
@@ -273,7 +305,9 @@ function is_prisoner(user) {
 function is_expanded(user) {
     return (user in user_settings
     && "expanded" in user_settings[user]
-    && user_settings[user]["expanded"] == true);
+    && user_settings[user]["expanded"] == true) ||
+    (get_threadcoin(user) > 100
+    && is_cultist(user, 'thread'));
 }
 
 function get_purchases(user) {
@@ -283,6 +317,15 @@ function get_purchases(user) {
     }
 
     return {};
+}
+
+function get_name(user) {
+    if(user in user_settings
+    && "name" in user_settings[user]) {
+        return user_settings[user]["name"];
+    }
+    return user;
+
 }
 
 function get_threadcoin(user) {
@@ -300,39 +343,50 @@ function update_reality() {
     for(var user in user_settings) {
         if(get_threadcoin(user) > 10
         && !is_expanded(user)) {
-            send_message(general_channel, invoke_command(user, "expand_mind", [true], true));
+            send_message(general_channel, invoke_command(user, "expand_mind", [true], true, true));
         }
 
         if(get_threadcoin(user) <= 10
         && is_expanded(user)) {
-            send_message(general_channel, invoke_command(user, "expand_mind", [false], true));
+            send_message(general_channel, invoke_command(user, "expand_mind", [false], true, true));
         }
 
         if(is_cultist(user, "thread")) {
             // Change name based on thread
             var coins = get_threadcoin(user);
             if(coins <= 10) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_scum"], true));
+                if(get_name(user) != "thread_scum")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_scum"], true, true));
             } else if(coins < 25) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_peon"], true));
+                if(get_name(user) != "thread_peon")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_peon"], true, true));
             } else if(coins < 50) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_minion"], true));
+                if(get_name(user) != "thread_minion")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_minion"], true, true));
             } else if(coins < 75) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_soldier"], true));
+                if(get_name(user) != "thread_soldier")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_soldier"], true, true));
             } else if(coins < 100) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_warrior"], true));
+                if(get_name(user) != "thread_warrior")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_warrior"], true, true));
             } else if(coins < 150) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_strategist"], true));
+                if(get_name(user) != "thread_strategist")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_strategist"], true, true));
             } else if(coins < 200) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_spy"], true));
+                if(get_name(user) != "thread_spy")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_spy"], true, true));
             } else if(coins < 250) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_emojimancer"], true));
+                if(get_name(user) != "thread_emojimancer")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_emojimancer"], true, true));
             } else if(coins < 300) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_minter"], true));
+                if(get_name(user) != "thread_minter")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_minter"], true, true));
             } else if(coins < 500) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_president"], true));
+                if(get_name(user) != "thread_president")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_president"], true, true));
             } else if(coins < 1000) {
-                send_message(general_channel, invoke_command(user, "change_name", ["thread_god"], true));
+                if(get_name(user) != "thread_god")
+                    send_message(general_channel, invoke_command(user, "change_name", ["thread_god"], true, true));
             } 
         } else {
             // If you are pledged to the thread, you give up all material posessions
@@ -491,12 +545,10 @@ function jailbreak() {
 ///////////////////////////
 // Process every message on slack
 bot.on('message', function(message) {
-
     if(should_process_this_message(message)) {
-        
         // Is the person in jail?
         if(is_prisoner(message.user)) {
-            send_message(message.channel, "<@" + message.user + "> tried to talk, but they are in jail. (You have to wait a minute)");
+            send_message(message.channel, "<@" + message.user + "> tried to talk, but they are in jail for violating emojiright. (You have to wait a minute)");
             delete_message(message);
             return;
         }
@@ -511,15 +563,20 @@ bot.on('message', function(message) {
         if(!is_expanded(message.user)
         && !is_the_thread(message)
         && !is_cultist(message.user, "antithread")) {
-            delete_message(message);
-            send_message(message.channel, "<@" + message.user + "> tried to talk in a place they do not know.  (post in The Thread -- https://thegpf.slack.com/archives/C04C4MK6T/p1488917437000402).");
+            // delete_message(message);
+            // send_message(message.channel, "<@" + message.user + "> tried to talk in a place they do not know.  (post in The Thread -- https://thegpf.slack.com/archives/C04C4MK6T/p1488917437000402).");
             return;
         }
 
-        // Did the message violate emojiright?
-        if(check_emojiright_violation(message)) {
-            delete_message(message);
-            return;
+        // Check if a command was issued
+        if(is_command(message.text)) {
+            process_command(message);
+        } else {
+            // Did the message violate emojiright?
+            if(check_emojiright_violation(message)) {
+                // delete_message(message);
+                return;
+            }
         }
 
         if(is_the_thread(message)
@@ -532,10 +589,6 @@ bot.on('message', function(message) {
         //     // marioparty_turn(message);
         // }
 
-        // Check if a command was issued
-        if(is_command(message.text)) {
-            process_command(message);
-        }
     }
 });
 
@@ -563,3 +616,5 @@ setInterval(jailbreak, 6000);
 // Impose reality every 10 minutes
 setInterval(impose_reality, 600000);
 impose_reality();
+
+// load_normality();

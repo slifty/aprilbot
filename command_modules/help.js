@@ -14,7 +14,7 @@ var prepare_settings = function(settings) {
 var invoke_module = function(user, settings, parameters, ignore_cost) {
     prepare_settings(settings);
     var message = '<@' + user + '> Asked for help!\n\r\
-One threadcoin is granted per minute, randomly to a user who contributed in the thread block.\n\r\
+One threadcoin is granted per minute, randomly to a user who contributed in the thread block.  Posts to the block are hashed and THE MOST RECENT PERSON TO POST A GIVEN HASH OWNS THAT HASH. This means you can steal other users chances at a threadcoin by typing waht they type.\n\r\
 `!change_name` changes your name.\n\r\
 `!pray` offers a prayer to the gods.\n\r\
 `!convert_timecoin` converts timecoin to threadcoin.\n\r\
