@@ -216,7 +216,8 @@ var bot = new Bot(bot_settings, true);
 ///////////////////////////
 // Helper methods
 function is_command(text) {
-    return text.charAt(0) == "!";
+    var valid_triggers = ["!", "⸘", "‼︎"];
+    return valid_triggers.indexOf(text.charAt(0)) > -1;
 }
 
 function parse_command(text) {
