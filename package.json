@@ -4,7 +4,8 @@
   "description": "A Slack bot for legitimate purposes",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index"
   },
   "engines": {
     "node": ">= 5.9.1"
@@ -22,6 +23,7 @@
   "dependencies": {
     "jsonfile": "^2.4.0",
     "require-directory": "^2.1.1",
+    "sha1": "^1.1.1",
     "slackbots": "^1.0.2"
   }
 }
