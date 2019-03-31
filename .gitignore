@@ -4,3 +4,4 @@ game_state.json
 config.json
 normality.json
 node_modules/*
+.env
