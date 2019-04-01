@@ -218,6 +218,13 @@ lodash@^4.17.2:
   version "4.17.5"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
 
+markovchain@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/markovchain/-/markovchain-1.0.2.tgz#58b38643fb6093cd5b62455b7b1e7bbfe56d7e53"
+  integrity sha1-WLOGQ/tgk81bYkVbex57v+VtflM=
+  dependencies:
+    pick-one-by-weight "~1.0.0"
+
 mime-db@~1.33.0:
   version "1.33.0"
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.33.0.tgz#a3492050a5cb9b63450541e39d9788d2272783db"
@@ -239,6 +246,11 @@ options@>=0.0.5:
 performance-now@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
+
+pick-one-by-weight@~1.0.0:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/pick-one-by-weight/-/pick-one-by-weight-1.0.2.tgz#fa0893276c848c8b7dd2f446e99f89d83c4cee86"
+  integrity sha1-+giTJ2yEjIt90vRG6Z+J2DxM7oY=
 
 punycode@^1.4.1:
   version "1.4.1"

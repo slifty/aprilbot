@@ -1,0 +1,654 @@
+{
+  "U04APGV31": {
+    "name": "aamcclai",
+    "threadcoin": 0
+  },
+  "U3HHK9DMZ": {
+    "name": "aboutaaron",
+    "threadcoin": 0
+  },
+  "U0421KK6M": {
+    "name": "adamcg",
+    "threadcoin": 0
+  },
+  "U1YU6Q5D5": {
+    "name": "afrinomad",
+    "threadcoin": 0
+  },
+  "U1X5NT0V6": {
+    "name": "thread_peon",
+    "threadcoin": 16,
+    "godcoin": 0,
+    "cult": "thread",
+    "purchases": {
+      "octopus": 1
+    },
+    "expanded": true
+  },
+  "U2BKPFLH1": {
+    "name": "alvin",
+    "threadcoin": 0
+  },
+  "U0F1QJVS6": {
+    "name": "andrew",
+    "threadcoin": 51,
+    "godcoin": 0,
+    "cult": "",
+    "expanded": true
+  },
+  "U2NCS440L": {
+    "name": "andrewmcgill",
+    "threadcoin": 0
+  },
+  "U02PH56UC": {
+    "name": "andy",
+    "threadcoin": 0
+  },
+  "U0BR980BF": {
+    "name": "anedham",
+    "threadcoin": 0
+  },
+  "U044F6MEP": {
+    "name": "anthonyb",
+    "threadcoin": 0
+  },
+  "U4G6HUKEC": {
+    "name": "aprilbot",
+    "threadcoin": 0
+  },
+  "U4GRT5QF4": {
+    "name": "aprilbot-x",
+    "threadcoin": 0
+  },
+  "U7ETTEMS9": {
+    "name": "asduner",
+    "threadcoin": 0
+  },
+  "U087HSZR9": {
+    "name": "baron",
+    "threadcoin": 34,
+    "cult": "",
+    "godcoin": 0,
+    "expanded": true
+  },
+  "U047Y7CJF": {
+    "name": "bchidest",
+    "threadcoin": 0
+  },
+  "U02K0RBHE": {
+    "name": "beardsmite",
+    "threadcoin": 0
+  },
+  "U0F24NV88": {
+    "name": "bellz",
+    "threadcoin": 0
+  },
+  "U02KTLZB2": {
+    "name": "benluxenberg",
+    "threadcoin": 0
+  },
+  "U2F0GTAP5": {
+    "name": "bennnnn",
+    "threadcoin": 0
+  },
+  "U4LBVAKL5": {
+    "name": "berrak",
+    "threadcoin": 0
+  },
+  "U04F3EJ06": {
+    "name": "besamijabon",
+    "threadcoin": 0
+  },
+  "U0D6UF48L": {
+    "name": "bkizzy",
+    "threadcoin": 0
+  },
+  "U087GAHD3": {
+    "name": "brianloveswords",
+    "threadcoin": 0
+  },
+  "U55JUCXBM": {
+    "name": "thread_president",
+    "threadcoin": 364,
+    "cult": "thread",
+    "godcoin": 0,
+    "expanded": true
+  },
+  "U1KCLPUL9": {
+    "name": "bspear_slack101",
+    "threadcoin": 0
+  },
+  "U8C5CENVB": {
+    "name": "bunker.jordan",
+    "threadcoin": 0
+  },
+  "U1981LAUC": {
+    "name": "capitolmuckrakr",
+    "threadcoin": 0
+  },
+  "U0DHM9WKW": {
+    "name": "thread_spy",
+    "threadcoin": 162,
+    "cult": "thread",
+    "godcoin": 0,
+    "expanded": true,
+    "purchases": {
+      "smirk": 1
+    }
+  },
+  "U2ANV4SKE": {
+    "name": "carolynlm",
+    "threadcoin": 0
+  },
+  "U4QSU6WPJ": {
+    "name": "cathydeng",
+    "threadcoin": 0
+  },
+  "U0KTFT2BG": {
+    "name": "cja",
+    "threadcoin": 0
+  },
+  "U02JYGVNZ": {
+    "name": "danburd",
+    "threadcoin": 0
+  },
+  "U390QSMAB": {
+    "name": "data_x_regina",
+    "threadcoin": 0
+  },
+  "U04R27WKX": {
+    "name": "dave",
+    "threadcoin": 0
+  },
+  "U8W4J2LLQ": {
+    "name": "djlemma",
+    "threadcoin": 0
+  },
+  "U0Q54RWQJ": {
+    "name": "drh",
+    "threadcoin": 0
+  },
+  "U02JZH2GK": {
+    "name": "eliot",
+    "threadcoin": 0
+  },
+  "U0YTG1G2D": {
+    "name": "elisha",
+    "threadcoin": 0
+  },
+  "U02JZU2N7": {
+    "name": "erekalper",
+    "threadcoin": 5,
+    "godcoin": 0
+  },
+  "U0LR4871D": {
+    "name": "erin",
+    "threadcoin": 0
+  },
+  "U02PJHL41": {
+    "name": "eyal",
+    "threadcoin": 0
+  },
+  "U0900VAQJ": {
+    "name": "f.descender",
+    "threadcoin": 0
+  },
+  "U02JZG8V5": {
+    "name": "gdalam",
+    "threadcoin": 0
+  },
+  "U0N7EFH3R": {
+    "name": "geraldrich",
+    "threadcoin": 3,
+    "cult": "",
+    "godcoin": 0
+  },
+  "U9NQGAVHT": {
+    "name": "github",
+    "threadcoin": 0
+  },
+  "U7GRN8AQY": {
+    "name": "googledrive",
+    "threadcoin": 0
+  },
+  "U04MYCVMC": {
+    "name": "Laurian",
+    "threadcoin": 156,
+    "jail": false,
+    "godcoin": 0,
+    "cult": "antithread",
+    "timecoin": 1,
+    "expanded": true,
+    "purchases": {
+      "spockhandskintone2": 1,
+      "hat": 1
+    }
+  },
+  "U09SLQ46R": {
+    "name": "grok",
+    "threadcoin": 0
+  },
+  "U60M8CQ65": {
+    "name": "gtigas",
+    "threadcoin": 0
+  },
+  "U39JEHYDQ": {
+    "name": "hong",
+    "threadcoin": 0
+  },
+  "U044H6QBW": {
+    "name": "ijanderso",
+    "threadcoin": 11,
+    "godcoin": 0,
+    "cult": "",
+    "purchases": {
+      "upside_down_face": 1
+    },
+    "expanded": true
+  },
+  "U087RU9HP": {
+    "name": "jenn",
+    "threadcoin": 0
+  },
+  "U0GMTBPEC": {
+    "name": "jeremy",
+    "threadcoin": 0
+  },
+  "U5Q8DBZUY": {
+    "name": "jeremybmerrill",
+    "threadcoin": 0
+  },
+  "U087KJYBH": {
+    "name": "jeresig",
+    "threadcoin": 0
+  },
+  "U1XG0EPLL": {
+    "name": "jjelosua",
+    "threadcoin": 0
+  },
+  "U04ACSA42": {
+    "name": "jkestner",
+    "threadcoin": 0
+  },
+  "U31AANA13": {
+    "name": "jlord",
+    "threadcoin": 0
+  },
+  "U1FKK4BTM": {
+    "name": "joannaskao",
+    "threadcoin": 0
+  },
+  "U04RPBC0E": {
+    "name": "jon",
+    "threadcoin": 0
+  },
+  "U04G3D6A1": {
+    "name": "jonkush",
+    "threadcoin": 0
+  },
+  "U3AR7KNU9": {
+    "name": "josh",
+    "threadcoin": 0
+  },
+  "U02PGTVBR": {
+    "name": "joulesm",
+    "threadcoin": 0
+  },
+  "U3BGD9BPW": {
+    "name": "julesfern",
+    "threadcoin": 0
+  },
+  "U5YBSSGVB": {
+    "name": "julia",
+    "threadcoin": 0
+  },
+  "U2XTH3QTB": {
+    "name": "juliachanb",
+    "threadcoin": 0
+  },
+  "U0DU4095Z": {
+    "name": "kasiahayden",
+    "threadcoin": 0
+  },
+  "U0A4SJEAD": {
+    "name": "katie",
+    "threadcoin": 0
+  },
+  "U0VRJ4H5G": {
+    "name": "kavya",
+    "threadcoin": 0
+  },
+  "U38H83H9A": {
+    "name": "kaythaney",
+    "threadcoin": 0
+  },
+  "U1XUECULS": {
+    "name": "kfogel",
+    "threadcoin": 0
+  },
+  "U08QXRSNM": {
+    "name": "knowtheory",
+    "threadcoin": 59,
+    "godcoin": 0,
+    "purchases": {
+      "thinking_face": 5,
+      "lololololol": 1,
+      "wave": 1,
+      "stuck_out_tongue": 1,
+      "lol": 15
+    },
+    "expanded": true,
+    "cult": ""
+  },
+  "U04LGS5E2": {
+    "name": "lauren",
+    "threadcoin": 0
+  },
+  "U1V6C7Y4E": {
+    "name": "leppert",
+    "threadcoin": 0
+  },
+  "U0N2RRTRP": {
+    "name": "lou",
+    "threadcoin": 0
+  },
+  "U02NL9XSF": {
+    "name": "lyla",
+    "threadcoin": 0
+  },
+  "U04GXMNA1": {
+    "name": "maboa",
+    "threadcoin": 0
+  },
+  "U0ZEQ9ARX": {
+    "name": "mackenziejones",
+    "threadcoin": 0
+  },
+  "U0SFGV7H8": {
+    "name": "malev",
+    "threadcoin": 0
+  },
+  "U043TC67Y": {
+    "name": "manzana",
+    "threadcoin": 0
+  },
+  "U02JYC96T": {
+    "name": "thread_soldier",
+    "threadcoin": 67,
+    "godcoin": 0,
+    "expanded": true,
+    "cult": "thread"
+  },
+  "U02PEC17Q": {
+    "name": "matt",
+    "threadcoin": 4,
+    "godcoin": 0
+  },
+  "U82C4MF6U": {
+    "name": "matt161",
+    "threadcoin": 0
+  },
+  "U2A6J1C58": {
+    "name": "mblackshaw",
+    "threadcoin": 0
+  },
+  "U045L0028": {
+    "name": "millz",
+    "threadcoin": 0
+  },
+  "U044EPUFK": {
+    "name": "mleibner",
+    "threadcoin": 0
+  },
+  "U0BPQ76JZ": {
+    "name": "mollysauter",
+    "threadcoin": 0
+  },
+  "U341ASCEP": {
+    "name": "mouse",
+    "threadcoin": 0
+  },
+  "U02PFT8JR": {
+    "name": "mstem",
+    "threadcoin": 0
+  },
+  "U09M7NQV9": {
+    "name": "thief",
+    "threadcoin": 2,
+    "jail": false,
+    "godcoin": 0
+  },
+  "U1PEPB81L": {
+    "name": "nkhensley",
+    "threadcoin": 0
+  },
+  "U0B4QRP2T": {
+    "name": "paul",
+    "threadcoin": 0
+  },
+  "U0A4CUJ2C": {
+    "name": "petey",
+    "threadcoin": 0
+  },
+  "U02PZUB28": {
+    "name": "phil",
+    "threadcoin": 0
+  },
+  "U9XGFH2EM": {
+    "name": "piotr",
+    "threadcoin": 0
+  },
+  "U0SS2JTAA": {
+    "name": "plusplus",
+    "threadcoin": 0
+  },
+  "U04GWNDFD": {
+    "name": "pschultz",
+    "threadcoin": 0
+  },
+  "U78BYHWLS": {
+    "name": "quackbot",
+    "threadcoin": 0
+  },
+  "U02PC07PJ": {
+    "name": "quetzal",
+    "threadcoin": 0
+  },
+  "U0881F99C": {
+    "name": "rachel",
+    "threadcoin": 0
+  },
+  "U117TGY7L": {
+    "name": "reactionbot",
+    "threadcoin": 0
+  },
+  "U2G6R1PTP": {
+    "name": "reefdog",
+    "threadcoin": 0
+  },
+  "U9A8MHQMP": {
+    "name": "rightgif",
+    "threadcoin": 0
+  },
+  "U0E37F9KK": {
+    "name": "riordan",
+    "threadcoin": 38,
+    "godcoin": 0,
+    "expanded": true,
+    "timecoin": 0,
+    "cult": ""
+  },
+  "U0TFEBC3U": {
+    "name": "rmaguir",
+    "threadcoin": 0
+  },
+  "U118SJ0HM": {
+    "name": "rowbot",
+    "threadcoin": 0
+  },
+  "U7MAUDGPK": {
+    "name": "ryan.mail.email",
+    "threadcoin": 0
+  },
+  "U8J7AHH7X": {
+    "name": "samantha.goldstein31",
+    "threadcoin": 0
+  },
+  "U0F5884P4": {
+    "name": "sarahhp",
+    "threadcoin": 0
+  },
+  "U39N3T6C8": {
+    "name": "sellars",
+    "threadcoin": 0
+  },
+  "U08QJ4QP4": {
+    "name": "sharon",
+    "threadcoin": 0
+  },
+  "U0FMKNR2A": {
+    "name": "sheepscore",
+    "threadcoin": 0
+  },
+  "U0QP501TL": {
+    "name": "sisi",
+    "threadcoin": 0
+  },
+  "U04GJ5MGB": {
+    "name": "sit-matt_hirsch",
+    "threadcoin": 0
+  },
+  "U04KS7CS0": {
+    "name": "sjolly",
+    "threadcoin": 0
+  },
+  "U04CHMCMG": {
+    "name": "slackboot",
+    "threadcoin": 0
+  },
+  "U02JZTC5W": {
+    "name": "slifty",
+    "threadcoin": 102,
+    "godcoin": 0,
+    "cult": "",
+    "purchases": {
+      "lol": 32,
+      "rage": 1,
+      "rotinkfase": 1,
+      "pleasedwithmyselolf": 1,
+      "trigger": 1,
+      "snakeeye": 1,
+      "star": 1,
+      "thinking_face": 2,
+      "shrug3": 5,
+      "tinkfase": 2,
+      "spinthink": 2,
+      "coin": 1,
+      "butt": 1
+    },
+    "expanded": true
+  },
+  "U1177NVQC": {
+    "name": "slifty___",
+    "threadcoin": 0
+  },
+  "U0FS34DLY": {
+    "name": "sliftyisapoopyhead",
+    "threadcoin": 0
+  },
+  "U5LKETMQD": {
+    "name": "sofauxboho",
+    "threadcoin": 0
+  },
+  "U1JS2G45C": {
+    "name": "steven",
+    "threadcoin": 0
+  },
+  "U02K03DJA": {
+    "name": "subtended",
+    "threadcoin": 0
+  },
+  "U2Q5HBQRH": {
+    "name": "sup_bot",
+    "threadcoin": 0
+  },
+  "U1B84T820": {
+    "name": "swartzcr",
+    "threadcoin": 0
+  },
+  "U0SL8RGF4": {
+    "name": "tara",
+    "threadcoin": 0
+  },
+  "U0FFH10GY": {
+    "name": "terminalveracity",
+    "threadcoin": 0
+  },
+  "U044EBQNK": {
+    "name": "tfe",
+    "threadcoin": 0
+  },
+  "U02K0F6GZ": {
+    "name": "theblinkingman",
+    "threadcoin": 0
+  },
+  "U1NP1A25C": {
+    "name": "thelordmuck",
+    "threadcoin": 0
+  },
+  "U3T0GDGF8": {
+    "name": "tiffehr",
+    "threadcoin": 0
+  },
+  "U02PGVAAN": {
+    "name": "travis",
+    "threadcoin": 0
+  },
+  "U3GTXKV28": {
+    "name": "turtlefoot5",
+    "threadcoin": 0
+  },
+  "U02SLJUCC": {
+    "name": "vitaminj",
+    "threadcoin": 0
+  },
+  "U16G5S47N": {
+    "name": "waldo",
+    "threadcoin": 0
+  },
+  "U267SJZ9Q": {
+    "name": "wes",
+    "threadcoin": 0
+  },
+  "U9A5RHFG8": {
+    "name": "westgif2",
+    "threadcoin": 0
+  },
+  "U2Q7SQ1PT": {
+    "name": "whats_up_bot",
+    "threadcoin": 0
+  },
+  "U087KENLU": {
+    "name": "willow",
+    "threadcoin": 0
+  },
+  "U0MV56FB8": {
+    "name": "wunsch",
+    "threadcoin": 0
+  },
+  "U221Z4MHC": {
+    "name": "zpao",
+    "threadcoin": 0
+  },
+  "U0CL6NHDW": {
+    "name": "zubakskees",
+    "threadcoin": 4,
+    "godcoin": 0,
+    "cult": "",
+    "expanded": false
+  },
+  "USLACKBOT": {
+    "name": "slackbot",
+    "threadcoin": 0
+  }
+}
