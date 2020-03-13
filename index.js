@@ -5,11 +5,11 @@ var sha1 = require('sha1');
 var fs = require('fs');
 var MarkovChain = require('markovchain')
 
-// var general_channel = 'C02JZTC78'; // #general
-var general_channel = 'GESC56Q6R'; // test room
+var general_channel = 'C02JZTC78'; // #general
+// var general_channel = 'GESC56Q6R'; // test room
 //var general_channel = 'C9Z3QHTEG' // #threadcoin
 
-var OVERRIDE_COUNT = 1000;
+var OVERRIDE_COUNT = 400;
 
 ///////////////////////////
 // Set things up to save settings
@@ -38,10 +38,10 @@ function set_stage() {
     if(!fs.existsSync(user_settings_file)) {
         // Give the introductory message
         send_message(general_channel, ":tada: :tada: Happy April 1st. :tada: :tada: \n\r\
-This year everybody has been quite busy, and so instead of our normal chaotic festivities we will celebrate with a simple gift: everybody here has been given their very own robot simulation of themselves.\n\r\
-Please say hello to your robot (named `YOURNAMEbot` e.g. `erekalperbot` or `lylabot`).\n\r\
+This year everybody has been quite busy, and so instead of our normal chaotic festivities we will celebrate with a simple gift: you have been given your very own robot simulation of yourself.\n\r\
+Please say hello to your bot (named `YOURNAMEbot` e.g. `erekalperbot` or `lylabot`).\n\r\
 \n\r\
-Have fun and take a moment to relax with your new and friendly companion!");
+Have fun and take a moment to relax with your new, friendly companion! Oh, by the way your bot is very impressionable and wants to spend time with you. The more you talk the more it learns and loves.");
     }
 }
 
@@ -147,8 +147,7 @@ function parse_command(text) {
 function should_process_this_message(message) {
     return message.type == "message"
         && !message.hidden
-        && !message.bot_id
-        && message.channel == general_channel;
+        && !message.bot_id;
 }
 
 function process_command(message) {
@@ -219,6 +218,8 @@ function delete_message(message) {
         "ts": message.ts,
         "channel": message.channel,
         "as_user": true
+    }).then(function(e) {
+        console.log(e);
     });
 }
 
@@ -237,6 +238,9 @@ function send_message(channel, text) {
 bot.on('message', function(message) {
     if(should_process_this_message(message)) {
         delete_message(message);
+        setTimeout(function() {
+            delete_message(message);
+        }, 500);
 
         prepUserState(message.user);
         var messageCount = user_settings[message.user].message_count;
@@ -254,7 +258,8 @@ bot.on('message', function(message) {
             var previousWord = word;
             word = oldWords[x];
             if(messageCount > 10
-            && Math.random() > (OVERRIDE_COUNT - messageCount) / OVERRIDE_COUNT) {
+            && Math.random() > (OVERRIDE_COUNT - messageCount) / OVERRIDE_COUNT
+            && messageCount < 40) {
                 if(oldWords.length == 1) {
                     newWord = personalBot.end(1).process().split(" ")[0];
                 } else {
@@ -271,39 +276,25 @@ bot.on('message', function(message) {
             newWords.push(newWord);
         }
 
-        // Send the message
-        if(messageCount <= OVERRIDE_COUNT) {
-            send_message(message.channel, "<" + userDict[message.user].name + "> " + newWords.join(" "));
-        }
+        var humanMessage = newWords.join(" ");
 
-        // Did they mention a bot name?
-        if(message.text.includes("bot")
-        && messageCount < OVERRIDE_COUNT) {
-            var words = message.text.replace(/[^\w\s]/, "").split(" ");
-            for(var x in words) {
-                var word = words[x];
-                if(word in botDict) {
-                    var botName = word;
-                    var bot = botDict[botName];
-                    setTimeout(function() {
-                        send_message(message.channel, "<" + botName + "> " + bot.end(Math.round(Math.random() * 40)).process());
-                    }, 500 + Math.random() * 2000);
-                }
-            }
-        } else if (moddedWord == false
-            || messageCount >= OVERRIDE_COUNT) {
-            var words = message.text.split(" ");
-            //var start = words[Math.floor(Math.random()*words.length)];
-            var start = message.text.split(" ")[0];
-            var botName = getBotName(getUser(message.user));
+        // Craft the bot message
+        var words = message.text.split(" ");
+        var start = message.text.split(" ")[0];
+        var botName = getBotName(getUser(message.user));
+        var botMessage = personalBot.start(start).end(words.length + Math.floor(Math.random() * 5)).process();
+
+        // Send the messages
+        if(messageCount > 60) {
+            send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + botMessage);
             setTimeout(function() {
-                var botMessage = personalBot.start(start).end(words.length).process();
-                var displayName = botName;
-                if(messageCount > OVERRIDE_COUNT) {
-                    displayName = userDict[message.user].name;
-                }
-                send_message(message.channel, "<" + displayName + "> " + botMessage);
-            }, 500 + Math.random() * (2000 + 1000 * messageCount));
+                send_message(message.channel, "`<" + botName + ">` " + humanMessage);
+            }, 500 + Math.random() * (2000));
+        } else {
+            send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + humanMessage);
+            setTimeout(function() {
+                send_message(message.channel, "`<" + botName + ">` " + botMessage);
+            }, 500 + Math.random() * (2000));
         }
 
         // Record the message last
@@ -311,6 +302,22 @@ bot.on('message', function(message) {
     }
 });
 
+function botChatter() {
+    Object.entries(user_settings).forEach(function(entry) {
+        var user = entry[0]
+        var messageCount = entry[1].message_count;
+
+        if(Math.random() < messageCount / 2000) {
+            setTimeout(function() {
+                var botName = getBotName(getUser(user));
+                var personalBot = getBot(getUser(user));
+                var botMessage = personalBot.end(Math.random() * 10).process();
+                var displayName = botName;
+                send_message(general_channel, "`<" + displayName + ">` " + botMessage);
+            }, Math.random() * (60000));
+        }
+    });
+}
 
 // Make sure we have saved before destroying the world
 // save_normality();
@@ -318,6 +325,12 @@ bot.on('message', function(message) {
 // Set the stage
 set_stage();
 loadUsers();
+
+
+// chance to trigger bots every minute
+setInterval(botChatter, 60000);
+
+botChatter();
 
 // Load settings
 load_settings();
