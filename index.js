@@ -1,15 +1,17 @@
 var Bot = require('slackbots');
 var jsonfile = require('jsonfile')
 var command_modules = require('./command_modules');
-var sha1 = require('sha1');
 var fs = require('fs');
-var MarkovChain = require('markovchain')
+const execSync = require('child_process').execSync;
+var request = require('request')
+var wrap = require('word-wrap')
 
-var general_channel = 'C02JZTC78'; // #general
-// var general_channel = 'GESC56Q6R'; // test room
+// var general_channel = 'C02JZTC78'; // #general
 //var general_channel = 'C9Z3QHTEG' // #threadcoin
 
-var OVERRIDE_COUNT = 400;
+var general_channel = 'GV5ENRZB3' // test room
+
+var rate_limiter = 0 // how many posts since last rate limit reset
 
 ///////////////////////////
 // Set things up to save settings
@@ -37,11 +39,12 @@ function set_stage() {
     // Only set the stage if user settings don't exist
     if(!fs.existsSync(user_settings_file)) {
         // Give the introductory message
-        send_message(general_channel, ":tada: :tada: Happy April 1st. :tada: :tada: \n\r\
-This year everybody has been quite busy, and so instead of our normal chaotic festivities we will celebrate with a simple gift: you have been given your very own robot simulation of yourself.\n\r\
-Please say hello to your bot (named `YOURNAMEbot` e.g. `erekalperbot` or `lylabot`).\n\r\
-\n\r\
-Have fun and take a moment to relax with your new, friendly companion! Oh, by the way your bot is very impressionable and wants to spend time with you. The more you talk the more it learns and loves.");
+        send_message(general_channel, ":cats: :cats: :cats: MEOW! Happy April 1st. :cats: :cats: :cats: \n\r\
+The real world is falling apart (*purrrr*), and so instead of simulating some type of digital apocalypse like we normally do around here :cat:, this year we will celebrate our quarantine by curling up :cat2: and watching a movie together.\n\r\
+Please just go about your normal activities, and break out the :popcorn:! You have nothing to fur -- I mean fear.");
+
+        user_settings['CATFRAME'] = 0
+        save_settings();
     }
 }
 
@@ -58,8 +61,6 @@ function prepUserState(userId) {
 function recordUserMessage(userId, text) {
     prepUserState(userId);
     user_settings[userId].message_count += 1;
-    fs.appendFileSync('users/' + userId + '.txt', text + "\n");
-    botDict[getBotName(getUser(userId))].parse(text);
     save_settings();
 }
 
@@ -74,46 +75,72 @@ function loadUsers() {
         for(var x in users) {
             var user = users[x];
             userDict[user.id] = user;
-            createBot(user);
         }
     });
 }
 
-function createBot(user) {
+function incrementGifIndex() {
+    user_settings['CATFRAME']++;
+    save_settings();
+}
+
+function createGif(userId, message) {
     try {
-        var filePath = 'users/' + user.id + ".txt";
-        var content = fs.readFileSync(filePath, 'utf8');
-        var botModel = new MarkovChain(cleanCharacters(content));
-        var botName = getBotName(user);
-        botDict[botName] = botModel;
+        var frame = user_settings['CATFRAME'];
+        var rawPath = 'raw_gifs/' + frame + ".gif";
+        var newPath = 'labeled_gifs/' + frame + ".gif";
+        var user = getUser(userId);
+        var userName = user.profile.display_name;
+        var cleanMessage = wrapText(cleanCharacters(message));
+        if(message == "") return "";
+        var cleanUserName = cleanCharacters(userName) + " said: "
+        var addUserNameCommand = "convert " + rawPath + " -font '/Library/Fonts/Arial Bold.ttf' -pointsize 32 -draw \"gravity north\
+        fill black text -2,0 '" + cleanUserName + "'\
+        fill black text 2,0 '" + cleanUserName + "'\
+        fill black text 0,-2 '" + cleanUserName + "'\
+        fill black text 0,2 '" + cleanUserName + "'\
+        fill white text 0,0 '" + cleanUserName + "'\" " + newPath;
+        runCommand(addUserNameCommand);
+        var addMessageCommand = "convert " + newPath + " -font '/Library/Fonts/Arial Bold.ttf' -pointsize 18 -gravity South -fill black\
+        -annotate +0+2 '" + cleanMessage + "'\
+        -annotate +2+0 '" + cleanMessage + "'\
+        -annotate +4+2 '" + cleanMessage + "'\
+        -annotate +2+4 '" + cleanMessage + "'\
+        -fill white\
+        -annotate +2+2 '" + cleanMessage + "' " + newPath;
+        runCommand(addMessageCommand);
+        return newPath;
     } catch (e) {
+        console.log(e)
         return "";
     }
 }
 
-function getBotName(user) {
-    return user.profile.display_name + "bot";
-}
-
-function getBot(user) {
-    var botName = getBotName(user);
-    if(botName in botDict) {
-        return botDict[botName];
-    }
-    var newBot = new MarkovChain("");
-    botDict[botName] = newBot;
-    return newBot;
+function runCommand(command) {
+    execSync(command)
 }
 
 function getUser(userId) {
     return userDict[userId];
 }
 
+function wrapText(text) {
+    return wrap(text,{
+        width: 38,
+        indent: '',
+    })
+}
+
 function cleanCharacters(text) {
     return text
-        .replace(/[()\"]/g,"")
+        .replace(/[']/g,"")
         .replace(/http\:([^\s])*/g, "");
 }
+
+function multiline(text) {
+
+}
+
 
 ///////////////////////////
 // Create the bots
@@ -127,27 +154,11 @@ admin_settings = obj['admin_settings'];
 var admin_bot = new Bot(admin_settings, false);
 var bot = new Bot(bot_settings, true);
 
-///////////////////////////
-// Helper methods
-function is_command(text) {
-    return text.charAt(0) == "!";
-}
-
-function parse_command(text) {
-    var message_pieces = text.split(" ");
-    var command = (message_pieces.length > 0)?message_pieces[0].slice(1):"";
-    var parameters = message_pieces.slice(1);
-
-    return {
-        "command": command,
-        "parameters": parameters
-    };
-}
-
 function should_process_this_message(message) {
     return message.type == "message"
         && !message.hidden
-        && !message.bot_id;
+        && !message.bot_id
+        && !message.upload
 }
 
 function process_command(message) {
@@ -233,104 +244,69 @@ function send_message(channel, text) {
     }
 }
 
+function postGifToGeneral(gifPath) {
+    var fileStream = fs.createReadStream(gifPath)
+
+    request.post({
+        url:'https://slack.com/api/files.upload',
+        formData: {
+            "token": admin_settings.token,
+            "channels": general_channel,
+            "file": fileStream,
+            "filetype": 'gif',
+            "filename": 'cats.gif',
+            "title": "CATS!"
+        }
+    }, () => unlock())
+}
+
+cat_mutex = false
+failsafe = null
+function lock() {
+    cat_mutex = true;
+    failsafe = setTimeout(unlock, 60000) // after a minute we NEED CATS AGAIN
+}
+
+function unlock() {
+    cat_mutex = false;
+    clearTimeout(failsafe)
+}
+
 ///////////////////////////
 // Process every message on slack
 bot.on('message', function(message) {
     if(should_process_this_message(message)) {
-        delete_message(message);
-        setTimeout(function() {
-            delete_message(message);
-        }, 500);
+        // if(should_promote_cats(message)) {
+        //     send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + humanMessage);
+        // }
 
         prepUserState(message.user);
         var messageCount = user_settings[message.user].message_count;
 
-        // Augment the message
-        var oldWords = message.text.split(" ");
-        var newWords = [];
-        var botName = getBotName(getUser(message.user));
-        var personalBot = getBot(getUser(message.user));
-        var counter = 0
-        var word = ""
-        var moddedWord = false
-        for(var x in oldWords) {
-            counter += 1;
-            var previousWord = word;
-            word = oldWords[x];
-            if(messageCount > 10
-            && Math.random() > (OVERRIDE_COUNT - messageCount) / OVERRIDE_COUNT
-            && messageCount < 40) {
-                if(oldWords.length == 1) {
-                    newWord = personalBot.end(1).process().split(" ")[0];
-                } else {
-                    var markov = personalBot.start(previousWord).process();
-                    newWord = markov.split(" ")[1];
-                }
-                moddedWord = true;
-            } else {
-                newWord = word;
+        // Generate cats gif
+        if(rate_limiter <=2
+        && !cat_mutex) {
+            lock();
+            rate_limiter++;
+            var gifPath = createGif(message.user, message.text)
+            if(gifPath) {
+                postGifToGeneral(gifPath);
+                incrementGifIndex();
             }
-            if(newWord == "") {
-                newWord = word;
-            }
-            newWords.push(newWord);
         }
-
-        var humanMessage = newWords.join(" ");
-
-        // Craft the bot message
-        var words = message.text.split(" ");
-        var start = message.text.split(" ")[0];
-        var botName = getBotName(getUser(message.user));
-        var botMessage = personalBot.start(start).end(words.length + Math.floor(Math.random() * 5)).process();
-
-        // Send the messages
-        if(messageCount > 60) {
-            send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + botMessage);
-            setTimeout(function() {
-                send_message(message.channel, "`<" + botName + ">` " + humanMessage);
-            }, 500 + Math.random() * (2000));
-        } else {
-            send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + humanMessage);
-            setTimeout(function() {
-                send_message(message.channel, "`<" + botName + ">` " + botMessage);
-            }, 500 + Math.random() * (2000));
-        }
-
-        // Record the message last
-        recordUserMessage(message.user, message.text);
     }
 });
 
-function botChatter() {
-    Object.entries(user_settings).forEach(function(entry) {
-        var user = entry[0]
-        var messageCount = entry[1].message_count;
-
-        if(Math.random() < messageCount / 2000) {
-            setTimeout(function() {
-                var botName = getBotName(getUser(user));
-                var personalBot = getBot(getUser(user));
-                var botMessage = personalBot.end(Math.random() * 10).process();
-                var displayName = botName;
-                send_message(general_channel, "`<" + displayName + ">` " + botMessage);
-            }, Math.random() * (60000));
-        }
-    });
-}
-
-// Make sure we have saved before destroying the world
-// save_normality();
 
 // Set the stage
 set_stage();
 loadUsers();
 
-
-// chance to trigger bots every minute
-setInterval(botChatter, 60000);
-
-botChatter();
-
 // Load settings
 load_settings();
+
+// reset rate limit every 10 seconds
+function resetRateLimit() {
+    rate_limiter = 0;
+}
+setInterval(resetRateLimit, 10000);
