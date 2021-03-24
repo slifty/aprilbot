@@ -22,8 +22,11 @@
   "homepage": "https://github.com/slifty/aprilbot#readme",
   "dependencies": {
     "jsonfile": "^2.4.0",
+    "markovchain": "^1.0.2",
+    "request": "^2.88.2",
     "require-directory": "^2.1.1",
     "sha1": "^1.1.1",
-    "slackbots": "^1.0.2"
+    "slackbots": "^1.0.2",
+    "word-wrap": "^1.2.3"
   }
 }

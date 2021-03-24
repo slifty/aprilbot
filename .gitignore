@@ -5,3 +5,4 @@ config.json
 normality.json
 node_modules/*
 .env
+users
