@@ -6,10 +6,9 @@ const execSync = require('child_process').execSync;
 var request = require('request')
 var wrap = require('word-wrap')
 
-// var general_channel = 'C02JZTC78'; // #general
+var general_channel = 'C02JZTC78'; // #general
 //var general_channel = 'C9Z3QHTEG' // #threadcoin
-
-var general_channel = 'GV5ENRZB3' // test room
+//var general_channel = 'GV5ENRZB3' // test room
 
 var rate_limiter = 0 // how many posts since last rate limit reset
 
@@ -92,7 +91,7 @@ function createGif(userId, message) {
         var user = getUser(userId);
         var userName = user.profile.display_name;
         var cleanMessage = wrapText(cleanCharacters(message));
-        if(message == "") return "";
+        if(cleanMessage.length < 3) return "";
         var cleanUserName = cleanCharacters(userName) + " said: "
         var addUserNameCommand = "convert " + rawPath + " -font '/Library/Fonts/Arial Bold.ttf' -pointsize 32 -draw \"gravity north\
         fill black text -2,0 '" + cleanUserName + "'\
@@ -126,15 +125,16 @@ function getUser(userId) {
 
 function wrapText(text) {
     return wrap(text,{
-        width: 38,
+        width: 30,
         indent: '',
     })
 }
 
 function cleanCharacters(text) {
     return text
-        .replace(/[']/g,"")
-        .replace(/http\:([^\s])*/g, "");
+        .replace(/[']/g,"’")
+        .replace(/(<)?http(s)?\:([^\s])*/g, "")
+        .trim();
 }
 
 function multiline(text) {
@@ -157,8 +157,11 @@ var bot = new Bot(bot_settings, true);
 function should_process_this_message(message) {
     return message.type == "message"
         && !message.hidden
-        && !message.bot_id
+        // && !message.bot_id
         && !message.upload
+}
+function is_bot(message) {
+    return !!message.bot_id
 }
 
 function process_command(message) {
@@ -279,19 +282,35 @@ bot.on('message', function(message) {
         // if(should_promote_cats(message)) {
         //     send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + humanMessage);
         // }
+        // 
+        console.log(message);
+        
+        if(message.channel == general_channel) {
+            delete_message(message);
+            setTimeout(function() {
+                delete_message(message);
+            }, 500);
+        }
 
-        prepUserState(message.user);
-        var messageCount = user_settings[message.user].message_count;
+        if(!is_bot(message)) {
 
-        // Generate cats gif
-        if(rate_limiter <=2
-        && !cat_mutex) {
-            lock();
-            rate_limiter++;
-            var gifPath = createGif(message.user, message.text)
-            if(gifPath) {
-                postGifToGeneral(gifPath);
-                incrementGifIndex();
+            prepUserState(message.user);
+            var messageCount = user_settings[message.user].message_count;
+
+            // Generate cats gif
+            if(rate_limiter <=2
+            && !cat_mutex) {
+                lock();
+                var gifPath = createGif(message.user, message.text)
+                if(gifPath !== "") {
+                    rate_limiter++;
+                    postGifToGeneral(gifPath);
+                    incrementGifIndex();
+                } else {
+                    unlock();
+                }
+            } else {
+                console.log("RATE LIMITED")
             }
         }
     }
@@ -309,4 +328,4 @@ load_settings();
 function resetRateLimit() {
     rate_limiter = 0;
 }
-setInterval(resetRateLimit, 10000);
+setInterval(resetRateLimit, 20000);
