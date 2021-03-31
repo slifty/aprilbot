@@ -1,14 +1,27 @@
-var Bot = require('slackbots');
+const util = require('util')
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path')
+const { v4: uuidv4 } = require('uuid');
+const EmojiConvertor = require('emoji-js')
+const streamPipeline = util.promisify(require('stream').pipeline)
+
 var jsonfile = require('jsonfile')
 var command_modules = require('./command_modules');
-var fs = require('fs');
 const execSync = require('child_process').execSync;
-var request = require('request')
-var wrap = require('word-wrap')
 
-var general_channel = 'C02JZTC78'; // #general
-//var general_channel = 'C9Z3QHTEG' // #threadcoin
-//var general_channel = 'GV5ENRZB3' // test room
+const { SocketModeClient, LogLevel } = require('@slack/socket-mode');
+const { WebClient } = require('@slack/web-api');
+
+const userToken = process.env.V2_BOT_TOKEN;
+const appToken = process.env.SOCKET_TOKEN;
+const socketModeClient = new SocketModeClient({
+    appToken,
+});
+const webClient = new WebClient(userToken);
+
+const main_channel = 'C01S87TUFGB' // test room
+//var main_channel = 'C02JZTC78'; // #general
 
 var rate_limiter = 0 // how many posts since last rate limit reset
 
@@ -38,7 +51,7 @@ function set_stage() {
     // Only set the stage if user settings don't exist
     if(!fs.existsSync(user_settings_file)) {
         // Give the introductory message
-        send_message(general_channel, ":cats: :cats: :cats: MEOW! Happy April 1st. :cats: :cats: :cats: \n\r\
+        send_message(main_channel, ":cats: :cats: :cats: MEOW! Happy April 1st. :cats: :cats: :cats: \n\r\
 The real world is falling apart (*purrrr*), and so instead of simulating some type of digital apocalypse like we normally do around here :cat:, this year we will celebrate our quarantine by curling up :cat2: and watching a movie together.\n\r\
 Please just go about your normal activities, and break out the :popcorn:! You have nothing to fur -- I mean fear.");
 
@@ -49,7 +62,6 @@ Please just go about your normal activities, and break out the :popcorn:! You ha
 
 ///////////////////////////
 // user settings stuff
-
 function prepUserState(userId) {
     if(!user_settings[userId]) {
         user_settings[userId] = {
@@ -78,254 +90,225 @@ function loadUsers() {
     });
 }
 
-function incrementGifIndex() {
-    user_settings['CATFRAME']++;
-    save_settings();
+/////////////////////////
+/// 2020 Code here
+let _emojiListCache = null
+const _emojiConverter = new EmojiConvertor()
+_emojiConverter.replace_mode = 'img'
+
+const blendMods = {
+    // Color Mods
+    'large_blue_square': ['tint', '#2461E9'],
+    'large_red_square': ['tint', '#C33524'],
+    'black_square': ['tint', '#040404'],
+    'white_square': ['tint', '#D9D9D9'],
+    'large_green_square': ['tint', '#4FAD32'],
+    'large_brown_square': ['tint', '#6E4224'],
+    'large_orange_square': ['tint', '#F09037'],
+    'large_purple_square': ['tint', '#AA46F6'],
+    'large_yellow_square': ['tint', '#E4B43D'],
+
+    // Direction Mods
+    'arrow_right': [],
+    'arrow_up': [],
+    'arrow_down': [],
+    'arrow_left': [],
+    'arrow_up_down': [],
+    'arrows_clockwise': [],
+    'arrow_upper_left': [],
+    'arrow_lower_left': [],
+    'arrow_lower_right': [],
+    'arrow_upper_right': [],
+    'left_right_arrow': [],
+    'arrow_up_down': [],
+    'arrow_forward': [],
+    'arrow_up_small': [],
+    'arrow_double_up': [],
+    'arrow_down_small': [],
+    'arrow_double_down': [],
+    'arrow_heading_down': [],
+    'arrow_heading_up': [],
+    'arrow_right_hook': [],
+    'arrow_backward': [],
+
+    // Number Mods
+    'one': [],
+    'two': [],
+    'three': [],
+    'four': [],
+    'five': [],
+    'six': [],
+    'seven': [],
+    'eight': [],
+    'nine': [],
+    'zero': [],
+
+    // Style Mods
+    'cubimal_chick': [], // Justin => Fractal Pattern
 }
-
-function createGif(userId, message) {
-    try {
-        var frame = user_settings['CATFRAME'];
-        var rawPath = 'raw_gifs/' + frame + ".gif";
-        var newPath = 'labeled_gifs/' + frame + ".gif";
-        var user = getUser(userId);
-        var userName = user.profile.display_name;
-        var cleanMessage = wrapText(cleanCharacters(message));
-        if(cleanMessage.length < 3) return "";
-        var cleanUserName = cleanCharacters(userName) + " said: "
-        var addUserNameCommand = "convert " + rawPath + " -font '/Library/Fonts/Arial Bold.ttf' -pointsize 32 -draw \"gravity north\
-        fill black text -2,0 '" + cleanUserName + "'\
-        fill black text 2,0 '" + cleanUserName + "'\
-        fill black text 0,-2 '" + cleanUserName + "'\
-        fill black text 0,2 '" + cleanUserName + "'\
-        fill white text 0,0 '" + cleanUserName + "'\" " + newPath;
-        runCommand(addUserNameCommand);
-        var addMessageCommand = "convert " + newPath + " -font '/Library/Fonts/Arial Bold.ttf' -pointsize 18 -gravity South -fill black\
-        -annotate +0+2 '" + cleanMessage + "'\
-        -annotate +2+0 '" + cleanMessage + "'\
-        -annotate +4+2 '" + cleanMessage + "'\
-        -annotate +2+4 '" + cleanMessage + "'\
-        -fill white\
-        -annotate +2+2 '" + cleanMessage + "' " + newPath;
-        runCommand(addMessageCommand);
-        return newPath;
-    } catch (e) {
-        console.log(e)
-        return "";
-    }
-}
-
-function runCommand(command) {
-    execSync(command)
-}
-
-function getUser(userId) {
-    return userDict[userId];
-}
-
-function wrapText(text) {
-    return wrap(text,{
-        width: 30,
-        indent: '',
-    })
-}
-
-function cleanCharacters(text) {
-    return text
-        .replace(/[']/g,"’")
-        .replace(/(<)?http(s)?\:([^\s])*/g, "")
-        .trim();
-}
-
-function multiline(text) {
-
-}
-
-
-///////////////////////////
-// Create the bots
-var bot_settings = {}
-var admin_settings = {}
-var config_file = 'config.json';
-obj = jsonfile.readFileSync(config_file);
-bot_settings = obj['bot_settings'];
-admin_settings = obj['admin_settings'];
-
-var admin_bot = new Bot(admin_settings, false);
-var bot = new Bot(bot_settings, true);
 
 function should_process_this_message(message) {
     return message.type == "message"
         && !message.hidden
-        // && !message.bot_id
         && !message.upload
 }
-function is_bot(message) {
-    return !!message.bot_id
+
+function extractEmoji(message) {
+    const matches = message.text.match(/\:[^\s\:]+\:/g)??[]
+    return matches.map(emoji => emoji.slice(1,-1))
 }
 
-function process_command(message) {
-    var command_pieces = parse_command(message.text);
-    var command = command_pieces.command;
-    var user = message.user;
-    var parameters = command_pieces.parameters;
-    var output = invoke_command(user, command, parameters);
-    if(output != "") {
-        send_message(message.channel, output);
+async function loadEmojiList() {
+    // Use https://api.slack.com/methods/emoji.list
+    // to get a list of all emoji in the app.  This should be called
+    // any time there is an emoji not already in the cached list.
+    //
+    // We may want to add a timeout since we are full of trolls,
+    // so this would only triger a request every 10 seconds or so.
+    if (_emojiListCache === null) {
+        const result = await webClient.emoji.list()
+        _emojiListCache = result.emoji
+        setTimeout(() => _emojiListCache = null, 60000)
     }
+    return _emojiListCache
 }
 
-// This lets us run commands without messages being the trigger
-function invoke_command(user, command, parameters, ignore_cost, no_followup) {
-    // Check if this is a registered command
-    if(command in command_modules) {
-        // Make sure the user has a settings entry
-        if(!(user in user_settings)){
-            user_settings[user] = {};
-        }
+function emojiFileExists(emoji) {
+    return fs.existsSync(`input_emoji/${emoji}`)
+}
 
-        // Run the command
-        var module_response = command_modules[command].invoke_module(user, user_settings[user], parameters, ignore_cost);
-        user_settings[user] = module_response.settings;
-
-        // Update reality
-        if(!no_followup) {
-            update_reality();
-        }
-
-        // Save reality
-        save_settings();
-
-        // Hard coded, but whatever.
-        if(command == "change_name") {
-            change_alias(user, user_settings[user]["name"]);
-        }
-
-        if(command == "listemoji") {
-            module_response.message += "\n\r" + listemoji();
-        }
-        if(command == "leaderboard") {
-            module_response.message += "\n\r" + leaderboard();
-        }
-
-        return module_response.message;
+async function downloadEmojiFile(emoji) {
+    // Download an emoji file from slack into the input_emoji directory
+    const resolvedEmoji = await resolveEmoji(emoji)
+    if(emojiFileExists(resolvedEmoji)) {
+        return
+    }
+    const emojiList = await loadEmojiList()
+    const destinationPath = `input_emoji/${resolvedEmoji}`
+    if (resolvedEmoji in emojiList) {
+        const imageUrl = emojiList[resolvedEmoji]
+        // const extension = path.extname('index.html')
+        const destination = fs.createWriteStream(destinationPath)
+        console.log(imageUrl)
+        const res = await fetch(imageUrl)
+        await streamPipeline(res.body, destination)
     } else {
-        return "'" + command + "' is not a valid command.";
+        // This is not a custom emoji, so we need to
+        // pull it from the file in this repo https://github.com/iamcal/emoji-data
+        // which should be cloned into a sibling directory to this project's root.
+        // const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
+        const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
+        const srcMatch = imgTag.match(/src=".*\.png"/)
+        const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
+        await streamPipeline(
+            fs.createReadStream(sourcePath),
+            fs.createWriteStream(`${destinationPath}`)
+        )
     }
 }
 
-///////////////////////////
-// Slack Methods
-
-/**
- * Returns true if a message should be processed
- * Messages should not be processed if they are hidden, not messages
- * or were created by bots
- */
-
-/**
- * Uses the admin account to delete a message
- */
-function delete_message(message) {
-    admin_bot._api('chat.delete', {
-        "token": admin_settings.token,
-        "ts": message.ts,
-        "channel": message.channel,
-        "as_user": true
-    }).then(function(e) {
-        console.log(e);
-    });
-}
-
-function send_message(channel, text) {
-    if(text != "") {
-        bot._api('chat.postMessage', {
-            "token": bot_settings.token,
-            "channel": channel,
-            "text": text
-        });
+async function resolveEmoji(emoji) {
+    const emojiList = await loadEmojiList()
+    if (emoji in emojiList
+     && emojiList[emoji].startsWith('alias:')) {
+        return emojiList[emoji].slice(6)
+    } else {
+        return emoji
     }
 }
 
-function postGifToGeneral(gifPath) {
-    var fileStream = fs.createReadStream(gifPath)
+async function generateBlendSteps(emojis) {
+    const blendSteps = await emojis.reduce(async (stepsPromise, emoji) => {
+        const steps = await stepsPromise
+        const resolvedEmoji = await resolveEmoji(emoji)
 
-    request.post({
-        url:'https://slack.com/api/files.upload',
-        formData: {
-            "token": admin_settings.token,
-            "channels": general_channel,
-            "file": fileStream,
-            "filetype": 'gif',
-            "filename": 'cats.gif',
-            "title": "CATS!"
+        // Note: the first emoji is never treated as a mod.
+        if (resolvedEmoji in blendMods
+         && steps.length > 0) {
+            steps.push(blendMods[resolvedEmoji])
+        } else {
+            steps.push(['loadEmoji', resolvedEmoji])
         }
-    }, () => unlock())
+        return steps
+    }, [])
+    return blendSteps
 }
 
-cat_mutex = false
-failsafe = null
-function lock() {
-    cat_mutex = true;
-    failsafe = setTimeout(unlock, 60000) // after a minute we NEED CATS AGAIN
+async function executeCommand(command) {
+
 }
 
-function unlock() {
-    cat_mutex = false;
-    clearTimeout(failsafe)
+function generateCommand(step, outfile, infiles) {
+    const stepType = step[0]
+    switch (stepType) {
+        case 'loadEmoji':
+            return `cp input_emoji/${step[1]} ${outfile}`
+        case 'tint':
+            return `magick ${infiles[0]} -colorspace gray -fill '${step[1]}' -tint 100 ${outfile}`
+    }
 }
+
+async function blendEmojis(emojis) {
+    await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
+    const blendSteps = await generateBlendSteps(emojis)
+    const workingDirectory = `tmp/${uuidv4()}`
+    let previousFile = null
+    fs.mkdirSync(workingDirectory)
+    const commands = blendSteps.map((step, i) => {
+        const command = generateCommand(
+            step,
+            `${workingDirectory}/${i}`,
+            [previousFile],
+        )
+        previousFile = `${workingDirectory}/${i}`
+        return command
+    })
+    commands.forEach(command => {
+        console.log(command)
+        execSync(command)
+    })
+}
+
+blendEmojis(['tinkfase', 'large_green_square'])
 
 ///////////////////////////
 // Process every message on slack
-bot.on('message', function(message) {
-    if(should_process_this_message(message)) {
-        // if(should_promote_cats(message)) {
-        //     send_message(message.channel, "`<" + userDict[message.user].profile.display_name + ">` " + humanMessage);
-        // }
-        // 
-        console.log(message);
-        
-        if(message.channel == general_channel) {
-            delete_message(message);
-            setTimeout(function() {
-                delete_message(message);
-            }, 500);
-        }
-
-        if(!is_bot(message)) {
-
-            prepUserState(message.user);
-            var messageCount = user_settings[message.user].message_count;
-
-            // Generate cats gif
-            if(rate_limiter <=2
-            && !cat_mutex) {
-                lock();
-                var gifPath = createGif(message.user, message.text)
-                if(gifPath !== "") {
-                    rate_limiter++;
-                    postGifToGeneral(gifPath);
-                    incrementGifIndex();
-                } else {
-                    unlock();
-                }
-            } else {
-                console.log("RATE LIMITED")
-            }
+socketModeClient.on('message', async ({event, body, ack}) => {
+    await ack();
+    if(should_process_this_message(event)) {
+        const emojis = extractEmoji(event)
+        if (emojis.length === 1) {
+            await webClient.reactions.add({
+                channel: event.channel,
+                name: emojis[0],
+                timestamp: event.ts,
+            })
+        } else {
+            const newEmoji = await blendEmojis(emojis)
+            // await webClient.reactions.add({
+            //     channel: event.channel,
+            //     name: newEmoji,
+            //     timestamp: event.ts,
+            // })
         }
     }
 });
 
+(async () => {
+  // Connect to Slack
+  await socketModeClient.start();
+  console.log("APRIL HAS STARTED!")
+})();
 
 // Set the stage
-set_stage();
-loadUsers();
+// set_stage();
+//loadUsers();
 
 // Load settings
-load_settings();
+// load_settings();
 
 // reset rate limit every 10 seconds
-function resetRateLimit() {
-    rate_limiter = 0;
-}
-setInterval(resetRateLimit, 20000);
+// function resetRateLimit() {
+//     rate_limiter = 0;
+// }
+// setInterval(resetRateLimit, 20000);
