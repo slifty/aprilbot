@@ -450,7 +450,6 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
         case 'squish-left':
             newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
                 command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity West -background none -extent %[dims] ${newFile}`,
                 files: newWorkingFiles,
@@ -458,7 +457,6 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
         case 'squish-right':
             newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
                 command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity East -background none -extent %[dims] ${newFile}`,
                 files: newWorkingFiles,
