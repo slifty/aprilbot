@@ -407,8 +407,18 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 cursor,
             }
 
+        // compose
+
+        case 'modadd':
+            newWorkingFiles.splice(cursor, 2, newFile)
+            const [img1, img2] = workingFiles.slice(-2)
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`
+                file: newWorkingFiles,
+                cursor
+            }
+
         case 'addParameter':
-            // reverse a gif
             return {
                 files: newWorkingFiles,
                 cursor,
