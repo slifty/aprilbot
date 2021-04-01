@@ -143,16 +143,16 @@ const blendMods = {
 
 
     // Number Mods
-    'one': [],
-    'two': [],
-    'three': [],
-    'four': [],
-    'five': [],
-    'six': [],
-    'seven': [],
-    'eight': [],
-    'nine': [],
-    'zero': [],
+    'one': ['addParameter', 1],
+    'two': ['addParameter', 2],
+    'three': ['addParameter', 3],
+    'four': ['addParameter', 4],
+    'five': ['addParameter', 5],
+    'six': ['addParameter', 6],
+    'seven': ['addParameter', 7],
+    'eight': ['addParameter', 8],
+    'nine': ['addParameter', 9],
+    'zero': ['addParameter', 0],
 
     // Style Mods
     'cubimal_chick': [], // Justin => Fractal Pattern
@@ -289,7 +289,11 @@ async function generateBlendSteps(emojis) {
     return blendSteps
 }
 
-function generateCommandObject(step, stepNumber, cursor, workingDirectory, workingFiles) {
+function parameterOrDefault(parameter, value) {
+    return parameter===''?value:parameter
+}
+
+function generateCommandObject(step, stepNumber, cursor, workingDirectory, workingFiles, parameter='') {
     const stepType = step[0]
     let newFile = `${workingDirectory}/${stepNumber}`
     let newWorkingFiles = [...workingFiles]
@@ -308,8 +312,9 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
         case 'tint':
             // Adjusting the tint of the current emoji replaces it in the stack
             newWorkingFiles.splice(cursor, 1, newFile)
+            tintAmount = Math.min(255, parameterOrDefault(parameter, 100))
             return {
-                command: `magick ${workingFiles[cursor]} -colorspace gray -fill '${step[1]}' -tint 100 ${newFile}`,
+                command: `magick ${workingFiles[cursor]} -colorspace gray -fill '${step[1]}' -tint ${tintAmount} ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
@@ -401,6 +406,14 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+
+        case 'addParameter':
+            // reverse a gif
+            return {
+                files: newWorkingFiles,
+                cursor,
+                parameter: `${parameter}${step[1]}`,
+            }
     }
 }
 
@@ -408,6 +421,7 @@ async function blendEmojis(emojis) {
     await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
     const blendSteps = await generateBlendSteps(emojis)
     const workingDirectory = `tmp/${uuidv4()}`
+    let parameter = ''
     let workingFiles = []
     let cursor = 0
     fs.mkdirSync(workingDirectory)
@@ -418,14 +432,18 @@ async function blendEmojis(emojis) {
             cursor,
             workingDirectory,
             workingFiles,
+            parameter
         )
         workingFiles = commandObject.files
+        parameter = commandObject.parameter
         cursor = commandObject.cursor
         return commandObject
     })
     commandObjects.forEach(commandObject => {
         console.log(commandObject)
-        execSync(commandObject.command)
+        if(commandObject.command) {
+            execSync(commandObject.command)
+        }
     })
     // uploadEmoji('apriltest2', `${workingDirectory}/${blendSteps.length - 1}`)
 }
