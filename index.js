@@ -452,6 +452,20 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+        case 'squish-left':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity West -background none -extent %[dims] ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
+        case 'squish-right':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity East -background none -extent %[dims] ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // cropping
         case 'crop-horizontal':
