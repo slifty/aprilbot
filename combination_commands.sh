@@ -3,16 +3,16 @@ magick $IM1 -set option:dims "%wx%h" $IM2 -resize "%[dims]" -compose Screen -com
 
 # slow top bottom transition (these should be one line but are split up for clarity)
 
-magick \( \( $IM1 -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
-       \( \( $IM2 -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=0 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=0 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
        -compose Screen -composite $OUT
 
 # fast top bottom transition
 
 # slow left right transition
 
-magick \( \( $IM1 -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
-       \( \( $IM2 -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
        -compose Screen -composite $OUT
 
 # fast left right transition
