@@ -172,7 +172,6 @@ const blendMods = {
     'hourglass_flowing_sand': ['slow-left-right-transition'],
     'fence': ['slats-transition'],
     'checkered_flag': ['checkerboard-transition'],
-    'bee': ['honeycomb-transition'],
 }
 
 function getColorFromHex(hex) {
@@ -561,22 +560,6 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
 
         case 'checkerboard-transition':
-            pieces = workingFiles.slice(cursor - 1, 2)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-            }
-            return {
-                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                file: newWorkingFiles,
-                cursor: cursor - 1
-            }
-
-        case 'honeycomb-transition':
             pieces = workingFiles.slice(cursor - 1, 2)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
