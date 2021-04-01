@@ -13,6 +13,12 @@ const execSync = require('child_process').execSync;
 const { SocketModeClient, LogLevel } = require('@slack/socket-mode');
 const { WebClient } = require('@slack/web-api');
 
+const Cookies = require('./emojiUpload/Cookies')
+const Emoji = require('./emojiUpload/Emoji')
+const Input = require('./emojiUpload/Input')
+const puppeteer = require('puppeteer')
+const selectors = require('./emojiUpload/selectors')
+
 const userToken = process.env.V2_BOT_TOKEN;
 const appToken = process.env.SOCKET_TOKEN;
 const socketModeClient = new SocketModeClient({
@@ -153,6 +159,50 @@ function should_process_this_message(message) {
         && !message.upload
 }
 
+async function uploadEmoji(name, filePath) {
+    const cookies = await Cookies.get();
+    const browser = await puppeteer.launch({
+        headless: true,
+    })
+    const credentials = {
+        email: process.env.SLACK_EMAIL,
+        password: process.env.SLACK_PASSWORD,
+    }
+
+    const page = await browser.newPage()
+    const files = [filePath]
+    const teamname = 'thegpf'
+
+    if (cookies) {
+      // Set cookies on browser load to avoid logging in over again.
+      await Cookies.restore(page);
+    }
+
+    await page.goto(`https://${teamname}.slack.com/customize/emoji`);
+
+    // Check if we need to sign in.
+    if (await page.$(selectors.LOGIN.EMAIL)) {
+      await Input.type(selectors.LOGIN.EMAIL, credentials.email, page);
+      await Input.type(selectors.LOGIN.PASSWORD, credentials.password, page);
+      await page.click(selectors.LOGIN.SUBMIT);
+      await page.waitForNavigation();
+    }
+
+    // Save new cookies after login
+    Cookies.save(await page.cookies(), teamname);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = path.parse(files[i]);
+      console.log('Processing ' + file.base);
+      try {
+          await Emoji.upload(file, name, page);
+      } catch (e) {}
+    }
+
+    console.log('Done');
+    await browser.close();
+}
+
 function extractEmoji(message) {
     const matches = message.text.match(/\:[^\s\:]+\:/g)??[]
     return matches.map(emoji => emoji.slice(1,-1))
@@ -267,8 +317,8 @@ async function blendEmojis(emojis) {
         console.log(command)
         execSync(command)
     })
+    uploadEmoji('apriltest2', `${workingDirectory}/${blendSteps.length - 1}`)
 }
-
 blendEmojis(['tinkfase', 'large_green_square'])
 
 ///////////////////////////
