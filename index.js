@@ -113,6 +113,8 @@ const blendMods = {
     'large_orange_square': ['tint', '#F09037'],
     'large_purple_square': ['tint', '#AA46F6'],
     'large_yellow_square': ['tint', '#E4B43D'],
+    'ericidol': ['negate'],
+    'newspaper': ['monochrome'],
 
     // Direction Mods
     'arrow_right': [],
@@ -125,17 +127,20 @@ const blendMods = {
     'arrow_lower_left': [],
     'arrow_lower_right': [],
     'arrow_upper_right': [],
-    'left_right_arrow': [],
-    'arrow_up_down': [],
+    'left_right_arrow': ['flop'],
+    'arrow_up_down': ['flip'],
     'arrow_forward': [],
     'arrow_up_small': [],
     'arrow_double_up': [],
     'arrow_down_small': [],
     'arrow_double_down': [],
-    'arrow_heading_down': [],
-    'arrow_heading_up': [],
+    'arrow_heading_down': ['rotate', '90'],
+    'arrow_heading_up': ['rotate', '-90'],
     'arrow_right_hook': [],
     'arrow_backward': [],
+
+    // Rotate mods
+
 
     // Number Mods
     'one': [],
@@ -284,56 +289,118 @@ async function generateBlendSteps(emojis) {
     return blendSteps
 }
 
-async function executeCommand(command) {
-
-}
-
-function generateCommand(step, outfile, infiles) {
+function generateCommandObject(step, stepNumber, cursor, workingDirectory, workingFiles) {
     const stepType = step[0]
+    let newFile = `${workingDirectory}/${stepNumber}`
+    let newWorkingFiles = [...workingFiles]
     switch (stepType) {
         case 'loadEmoji':
-            return `cp input_emoji/${step[1]} ${outfile}`
+            // Loading a new emoji progresses the cursor to that emoji
+            // Previously loaded emoji are still in the stack
+            newWorkingFiles.push(newFile)
+            return {
+                command: `cp input_emoji/${step[1]} ${newFile}`,
+                files: newWorkingFiles,
+                cursor: workingFiles.length,
+            }
 
         // color
         case 'tint':
-            return `magick ${infiles[0]} -colorspace gray -fill '${step[1]}' -tint 100 ${outfile}`
+            // Adjusting the tint of the current emoji replaces it in the stack
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick ${workingFiles[cursor]} -colorspace gray -fill '${step[1]}' -tint 100 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'negate':
             // invert the colors
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -negate ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
             return `magick convert ${infiles[0]} -negate ${outfile}`
         case 'monochrome':
             // transform to pure black and white (like print)
-            return `magick convert ${infiles[0]} -monochrome ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -monochrome ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'sepia-tone':
-            return `magick convert ${infiles[0]} -sepia-tone 80%`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -sepia-tone 80% ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // geometry
-        case 'rotate90':
-            return `magick convert ${infiles[0]} -rotate 90 ${outfile}`
-        case 'rotate180':
-            return `magick convert ${infiles[0]} -rotate 180 ${outfile}`
-        case 'rotate270':
-            return `magick convert ${infiles[0]} -rotate -90 ${outfile}`
+        case 'rotate':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -rotate '${step[1]}' ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
+
         case 'flip':
             // vertical flip
-            return `magick convert ${infiles[0]} -flip ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -flip ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'flop':
             // horizontal flip
-            return `magick convert ${infiles[0]} -flop ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -flop ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'shift-left':
-            return `magick convert ${infiles[0]} -roll +2+0 ${outfile}`
-        case 'shift-rigt':
-            return `magick convert ${infiles[0]} -roll -2+0 ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -roll +2+0 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
+        case 'shift-right':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -roll -2+0 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'shift-up':
-            return `magick convert ${infiles[0]} -roll +0+2 ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -roll +0+2 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
         case 'shift-down':
-            return `magick convert ${infiles[0]} -roll +0-2 ${outfile}`
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -roll +0-2 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // animation
         case 'reverse':
             // reverse a gif
-            return `magick convert ${infiles[0]} -reverse ${outfile}`
-
-
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]} -reverse ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
     }
 }
 
@@ -341,24 +408,28 @@ async function blendEmojis(emojis) {
     await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
     const blendSteps = await generateBlendSteps(emojis)
     const workingDirectory = `tmp/${uuidv4()}`
-    let previousFile = null
+    let workingFiles = []
+    let cursor = 0
     fs.mkdirSync(workingDirectory)
-    const commands = blendSteps.map((step, i) => {
-        const command = generateCommand(
+    const commandObjects = blendSteps.map((step, i) => {
+        const commandObject = generateCommandObject(
             step,
-            `${workingDirectory}/${i}`,
-            [previousFile],
+            i,
+            cursor,
+            workingDirectory,
+            workingFiles,
         )
-        previousFile = `${workingDirectory}/${i}`
-        return command
+        workingFiles = commandObject.files
+        cursor = commandObject.cursor
+        return commandObject
     })
-    commands.forEach(command => {
-        console.log(command)
-        execSync(command)
+    commandObjects.forEach(commandObject => {
+        console.log(commandObject)
+        execSync(commandObject.command)
     })
-    uploadEmoji('apriltest2', `${workingDirectory}/${blendSteps.length - 1}`)
+    // uploadEmoji('apriltest2', `${workingDirectory}/${blendSteps.length - 1}`)
 }
-blendEmojis(['tinkfase', 'large_green_square'])
+blendEmojis(['tinkfase', 'large_green_square', 'joy', 'large_orange_square'])
 
 ///////////////////////////
 // Process every message on slack
