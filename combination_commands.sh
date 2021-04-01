@@ -27,8 +27,22 @@ magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extr
 
 # checkerboard transition
 
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] pattern:checkerboard -auto-level \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] pattern:checkerboard -auto-level -negate \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       -compose Screen -composite $OUT
+
+# hexagons
+
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] pattern:checkerboard -auto-level \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] pattern:checkerboard -auto-level -negate \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       -compose Screen -composite $OUT
+
+
 # slats transition
 
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( example_mask.png -resize %[dims] \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( example_mask.png -resize %[dims] -negate \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       -compose Screen -composite $OUT
 
 
 # notes ===================================
