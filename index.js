@@ -397,6 +397,13 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+        case 'rainbowify':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `./pseudocolor -i 32 -d 8 ${workingFiles[cursor]} ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // geometry
         case 'rotate':
