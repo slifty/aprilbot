@@ -18,7 +18,7 @@ class Emoji  {
     await page.waitForSelector(selectors.UPLOAD.START)
     await page.click(selectors.UPLOAD.START)
     const element = await page.$(selectors.UPLOAD.IMAGE);
-    Input.type(selectors.UPLOAD.NAME, name, page);
+    await Input.type(selectors.UPLOAD.NAME, name, page);
     await element.uploadFile(file.dir + '/' + file.base);
     await page.waitForTimeout(500);
     await page.click(selectors.UPLOAD.SUBMIT);

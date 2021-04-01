@@ -27,8 +27,8 @@ const socketModeClient = new SocketModeClient({
 });
 const webClient = new WebClient(userToken);
 
-const main_channel = 'C01S87TUFGB' // test room
-//var main_channel = 'C02JZTC78'; // #general
+//const main_channel = 'C01S87TUFGB' // test room
+var main_channel = 'C02JZTC78'; // #general
 
 var rate_limiter = 0 // how many posts since last rate limit reset
 
@@ -58,11 +58,10 @@ function set_stage() {
     // Only set the stage if user settings don't exist
     if(!fs.existsSync(user_settings_file)) {
         // Give the introductory message
-        send_message(main_channel, ":cats: :cats: :cats: MEOW! Happy April 1st. :cats: :cats: :cats: \n\r\
-The real world is falling apart (*purrrr*), and so instead of simulating some type of digital apocalypse like we normally do around here :cat:, this year we will celebrate our quarantine by curling up :cat2: and watching a movie together.\n\r\
-Please just go about your normal activities, and break out the :popcorn:! You have nothing to fur -- I mean fear.");
-
-        user_settings['CATFRAME'] = 0
+        webClient.chat.postMessage({
+            text: "HAPPY APRIL FOOLS 2021\n\rSince things are so intense, this year's April Fools is designed to be simple AND give you a little control over your slack experience.\n\rNo longer do you need to worry about how the group will react to your posts: just include the emoji response you want and aprilbot will grace your post with a reaction :tada:.\r\n",
+            channel: main_channel,
+        })
         save_settings();
     }
 }
@@ -108,8 +107,8 @@ const blendMods = {
     // Color Mods
     'large_blue_square': ['tint', '#2461E9'],
     'large_red_square': ['tint', '#C33524'],
-    'black_square': ['tint', '#040404'],
-    'white_square': ['tint', '#D9D9D9'],
+    'large_black_square': ['tint', '#040404'],
+    'large_white_square': ['tint', '#D9D9D9'],
     'large_green_square': ['tint', '#4FAD32'],
     'large_brown_square': ['tint', '#6E4224'],
     'large_orange_square': ['tint', '#F09037'],
@@ -117,32 +116,28 @@ const blendMods = {
     'large_yellow_square': ['tint', '#E4B43D'],
     'ericidol': ['negate'],
     'newspaper': ['monochrome'],
+    'film_frames': ['sepia-tone'],
+    'bulb': ['soft-glow'],
 
     // Direction Mods
     'arrow_left': ['roll-horizontal', -25],
     'arrow_right': ['roll-horizontal', 25],
     'arrow_up': ['roll-vertical', 25],
     'arrow_down': ['roll-vertical', -25],
-    'arrows_clockwise': [], // rotate animation
     'arrow_upper_left': ['roll-diagonal-upper-left', -25],
     'arrow_upper_right': ['roll-diagonal-upper-right', 25],
     'arrow_lower_right': ['roll-diagonal-upper-left', 25],
     'arrow_lower_left': ['roll-diagonal-upper-right', -25],
     'left_right_arrow': ['flop'],
     'arrow_up_down': ['flip'],
-    'arrow_forward': [],
-    'arrow_up_small': [],
-    'arrow_double_up': [],
-    'arrow_down_small': [],
-    'arrow_double_down': [],
+    'arrow_forward': ['squish-right'],
     'arrow_heading_down': ['rotate', '90'],
     'arrow_heading_up': ['rotate', '-90'],
-    'arrow_right_hook': [],
-    'arrow_backward': [],
+    'arrow_backward': ['squish-left'],
 
     // Crop mods
-    'scissors': ['crop-vertical', 50],
-    'knife': ['crop-horizontal', 50],
+    // 'scissors': ['crop-vertical', 50],
+    // 'knife': ['crop-horizontal', 50],
 
 
     // Number Mods
@@ -166,6 +161,7 @@ const blendMods = {
     // animation mods
     'rewind': ['reverse'],
     'rainbow': ['rainbowify'],
+    'spiral': ['pinwheel'],
 
     // combination mods
     'heavy_plus_sign': ['modadd'],
@@ -246,7 +242,7 @@ async function uploadEmoji(name, filePath) {
     }
 
     console.log('Done');
-    await browser.close();
+    //await browser.close();
 }
 
 function extractEmoji(message) {
@@ -359,6 +355,14 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 cursor: workingFiles.length,
             }
 
+        case 'regenerate':
+            // This is a special mod to force regeneration of emoji
+            // there is no actual command
+            return {
+                files: newWorkingFiles,
+                cursor: workingFiles.length,
+            }
+
         // color
         case 'tint':
             // Adjusting the tint of the current emoji replaces it in the stack
@@ -396,7 +400,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
         case 'soft-glow':
             newWorkingFiles.splice(cursor, 1, newFile)
             return {
-                command: `magick convert ${workingFiles[cursor]}[0] ( +clone -blur 0x3 ) -compose Lighten -composite ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} \\( +clone -blur 0x3 \\) -compose Lighten -composite ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
@@ -482,28 +486,28 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
         case 'pinwheel':
             newWorkingFiles.splice(cursor, 1, newFile)
             return {
-                command: `magick -dispose previous ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) ${newFile}`,
+                command: `magick -dispose previous ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) ${newFile}.gif && mv ${newFile}.gif ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
 
         // cropping
-        case 'crop-horizontal':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            cropPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -crop 100%x100%x${cropPercent}%x0 ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'crop-vertical':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            cropPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -crop 100%x100%x0x${cropPercent}% ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
+        // case 'crop-horizontal':
+        //     newWorkingFiles.splice(cursor, 1, newFile)
+        //     cropPercent = parameterOrDefault(parameter, step[1]) % 100
+        //     return {
+        //         command: `magick convert ${workingFiles[cursor]} -set option:dims "%wx%h" -crop 100%x50%x0x0 -fill white ${newFile}`,
+        //         files: newWorkingFiles,
+        //         cursor,
+        //     }
+        // case 'crop-vertical':
+        //     newWorkingFiles.splice(cursor, 1, newFile)
+        //     cropPercent = parameterOrDefault(parameter, step[1]) % 100
+        //     return {
+        //         command: `magick convert ${workingFiles[cursor]} \\( +clone -fill white -colorize 100 -write mpr:bg +delete \\) -crop 50%x100%x0x0 ${newFile}`,
+        //         files: newWorkingFiles,
+        //         cursor,
+        //     }
 
         // animation
         case 'reverse':
@@ -643,6 +647,9 @@ async function generateNameFromSteps(steps) {
             case "sepia-tone":
                 newName = `old${newName}`
                 break;
+            case "soft-glow":
+                newName = `glowing${newName}`
+                break;
             case "flip":
                 newName = `flipped${newName}`
                 break;
@@ -664,6 +671,9 @@ async function generateNameFromSteps(steps) {
                 break;
             case "rainbowify":
                 newName = `rainbow${newName}`
+                break;
+            case "pinwheel":
+                newName = `spin${newName}`
                 break;
             case "addParameter":
                 parameterCache = parameterCache + step[1]
@@ -708,7 +718,7 @@ async function generateRandomComposeStep() {
 
 async function blendEmojis(emojis) {
     const emojiHash = emojis.join(":")
-    if (!('exclamation' in emojis)
+    if (!emojis.includes('exclamation')
      && emojiHash in user_settings) {
         return user_settings[emojiHash]
     }
@@ -756,8 +766,8 @@ async function blendEmojis(emojis) {
 
     let newName = await generateNameFromSteps(blendSteps)
     newName = await decollideName(newName)
-    console.log(newName)
-    await uploadEmoji(newName, `${workingDirectory}/${blendSteps.length - 1}`)
+    console.log(workingFiles)
+    await uploadEmoji(newName, `${workingFiles[0]}`)
     user_settings[emojiHash] = newName
     save_settings()
     return newName
@@ -776,12 +786,22 @@ socketModeClient.on('message', async ({event, body, ack}) => {
                 timestamp: event.ts,
             })
         } else if (emojis.length > 0) {
-            const newEmoji = await blendEmojis(emojis)
-            await webClient.reactions.add({
-                channel: event.channel,
-                name: newEmoji,
-                timestamp: event.ts,
-            })
+            let attempts = 0
+            while(attempts < 2) {
+                try {
+                    const newEmoji = await blendEmojis(emojis)
+                    await webClient.reactions.add({
+                        channel: event.channel,
+                        name: newEmoji,
+                        timestamp: event.ts,
+                    })
+                    attempts = 90000
+                } catch (e) {
+                    emojis.push('exclamation')
+                    console.log("Failed: trying again")
+                    attempts = attempts + 1
+                }
+            }
         }
     }
 });
@@ -793,11 +813,11 @@ socketModeClient.on('message', async ({event, body, ack}) => {
 })();
 
 // Set the stage
-// set_stage();
+set_stage();
 //loadUsers();
 
 // Load settings
-// load_settings();
+load_settings();
 
 // reset rate limit every 10 seconds
 // function resetRateLimit() {
