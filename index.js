@@ -169,6 +169,7 @@ const blendMods = {
     // combination mods
     'heavy_plus_sign': ['modadd'],
     'lower_left_paintbrush': ['blend'],
+    'hourglass_flowing_sand': ['slow-left-right-transition'],
 }
 
 function getColorFromHex(hex) {
@@ -510,7 +511,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 cursor: cursor - 1
             }
 
-        case 'slow-left-right-transition'
+        case 'slow-left-right-transition':
             pieces = workingFiles.slice(cursor - 1, 2)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
@@ -521,15 +522,26 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 newWorkingFiles.splice(cursor, 1, newFile)
             }
             return {
-                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
+                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=90 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=270 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
                 file: newWorkingFiles,
                 cursor: cursor - 1
             }
 
-        magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
-               \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
-               -compose Screen -composite $OUT
-
+        case 'alpha-over':
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
+            }
+            return {
+                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
     }
 }
 
