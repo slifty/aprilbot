@@ -390,6 +390,13 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+        case 'soft-glow':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick convert ${workingFiles[cursor]}[0] ( +clone -blur 0x3 ) -compose Lighten -composite ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // geometry
         case 'rotate':
