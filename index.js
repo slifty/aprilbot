@@ -165,6 +165,7 @@ const blendMods = {
 
     // animation mods
     'rewind': ['reverse'],
+    'rainbow': ['rainbowify'],
 
     // combination mods
     'heavy_plus_sign': ['modadd'],
@@ -284,7 +285,6 @@ async function downloadEmojiFile(emoji) {
         const imageUrl = emojiList[resolvedEmoji]
         // const extension = path.extname('index.html')
         const destination = fs.createWriteStream(destinationPath)
-        console.log(imageUrl)
         const res = await fetch(imageUrl)
         await streamPipeline(res.body, destination)
     } else {
@@ -314,14 +314,14 @@ async function resolveEmoji(emoji) {
     }
 }
 
-async function generateBlendSteps(emojis) {
+async function generateBlendSteps(emojis, allowFirstMod=false) {
     const blendSteps = await emojis.reduce(async (stepsPromise, emoji) => {
         const steps = await stepsPromise
         const resolvedEmoji = await resolveEmoji(emoji)
 
         // Note: the first emoji is never treated as a mod.
         if (resolvedEmoji in blendMods
-         && steps.length > 0) {
+         && (steps.length > 0 || allowFirstMod === true)) {
             steps.push(blendMods[resolvedEmoji])
         } else {
             steps.push(['loadEmoji', resolvedEmoji])
@@ -521,7 +521,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
             return {
                 command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`,
-                file: newWorkingFiles,
+                files: newWorkingFiles,
                 cursor: cursor - 1
             }
 
@@ -537,7 +537,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
             return {
                 command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
-                file: newWorkingFiles,
+                files: newWorkingFiles,
                 cursor: cursor - 1
             }
 
@@ -553,7 +553,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=90 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=270 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                file: newWorkingFiles,
+                files: newWorkingFiles,
                 cursor: cursor - 1
             }
 
@@ -569,7 +569,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                file: newWorkingFiles,
+                files: newWorkingFiles,
                 cursor: cursor - 1
             }
 
@@ -585,7 +585,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                file: newWorkingFiles,
+                files: newWorkingFiles,
                 cursor: cursor - 1
             }
     }
@@ -655,6 +655,9 @@ async function generateNameFromSteps(steps) {
             case "roll-vertical":
                 newName = `lifted${parameterOrDefault(parameterCache, step[1])}${newName}`
                 break;
+            case "rainbowify":
+                newName = `rainbow${newName}`
+                break;
             case "addParameter":
                 parameterCache = parameterCache + step[1]
                 break
@@ -671,10 +674,29 @@ async function decollideName(name) {
     if (name in existingEmoji
     || _emojiConverter.replace_colons(`:${name}:`) !== `:${name}:`){
         const words = randomWords(2)
-        console.log(words)
         return `${name}-${words[0]}-${words[1]}`
     }
     return name
+}
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+async function generateRandomComposeStep() {
+    const randomInt = getRandomInt(5)
+    switch (randomInt) {
+        case 0:
+            return (await generateBlendSteps(['checkered_flag'], true))[0]
+        case 1:
+            return (await generateBlendSteps(['heavy_plus_sign'], true))[0]
+        case 2:
+            return (await generateBlendSteps(['lower_left_paintbrush'], true))[0]
+        case 3:
+            return (await generateBlendSteps(['hourglass_flowing_sand'], true))[0]
+        case 4:
+            return (await generateBlendSteps(['fence'], true))[0]
+    }
 }
 
 async function blendEmojis(emojis) {
@@ -706,24 +728,24 @@ async function blendEmojis(emojis) {
         index = i
         return commandObject
     })
-    // while(workingFiles.length > 1) {
-    //     commandObject = generateCommandObject(
-    //         // step
-    //         index,
-    //         cursor,
-    //         workingDirectory,
-    //         workingFiles,
-    //     )
-    //     workingFiles = commandObject.files
-    //     cursor = commandObject.cursor
-    //     index = index + 1
-    //     commandObjects.push(commandObject)
-    // }
-    // commandObjects.forEach(commandObject => {
-    //     if(commandObject.command) {
-    //         execSync(commandObject.command)
-    //     }
-    // })
+    while(workingFiles.length > 1) {
+        commandObject = generateCommandObject(
+            await generateRandomComposeStep(),
+            index,
+            cursor,
+            workingDirectory,
+            workingFiles,
+        )
+        workingFiles = commandObject.files
+        cursor = commandObject.cursor
+        index = index + 1
+        commandObjects.push(commandObject)
+    }
+    commandObjects.forEach(commandObject => {
+        if(commandObject.command) {
+            execSync(commandObject.command)
+        }
+    })
 
     let newName = await generateNameFromSteps(blendSteps)
     newName = await decollideName(newName)
