@@ -9,6 +9,10 @@ magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extr
 
 # fast top bottom transition
 
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] gradient: -level 35%,65% \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=0 gradient: -level 35%,65% \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       -compose Screen -composite $OUT
+
 # slow left right transition
 
 magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
@@ -16,6 +20,10 @@ magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extr
        -compose Screen -composite $OUT
 
 # fast left right transition
+
+magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: -level 35%,65% \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: -level 35%,65% \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+       -compose Screen -composite $OUT
 
 # checkerboard transition
 
