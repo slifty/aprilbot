@@ -449,7 +449,6 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
-
         case 'crop-vertical':
             newWorkingFiles.splice(cursor, 1, newFile)
             cropPercent = parameterOrDefault(parameter, step[1]) % 100
@@ -468,7 +467,15 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
-
+        // compose
+        case 'modadd':
+            newWorkingFiles.splice(cursor, 2, newFile)
+            const [img1, img2] = workingFiles.slice(-2)
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`
+                file: newWorkingFiles,
+                cursor
+            }
     }
 }
 
