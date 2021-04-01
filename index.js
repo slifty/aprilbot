@@ -160,8 +160,15 @@ const blendMods = {
     // Style Mods
     // 'cubimal_chick': [], // Justin => Fractal Pattern
 
+    // meta mods
+    'exclamation': ['regenerate'], // Always regenerate even if hash exists
+
     // animation mods
     'rewind': ['reverse'],
+
+    // combination mods
+    'heavy_plus_sign': ['modadd'],
+    'lower_left_paintbrush': ['blend'],
 }
 
 function getColorFromHex(hex) {
@@ -284,11 +291,13 @@ async function downloadEmojiFile(emoji) {
         // const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const srcMatch = imgTag.match(/src=".*\.png"/)
-        const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
-        await streamPipeline(
-            fs.createReadStream(sourcePath),
-            fs.createWriteStream(`${destinationPath}`)
-        )
+        if(srcMatch) {
+            const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
+            await streamPipeline(
+                fs.createReadStream(sourcePath),
+                fs.createWriteStream(`${destinationPath}`)
+            )
+        }
     }
 }
 
@@ -467,15 +476,60 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+
         // compose
         case 'modadd':
-            newWorkingFiles.splice(cursor, 2, newFile)
-            const [img1, img2] = workingFiles.slice(-2)
-            return {
-                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`
-                file: newWorkingFiles,
-                cursor
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
             }
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
+
+        case 'blend':
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
+            }
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
+
+        case 'slow-left-right-transition'
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
+            }
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
+
+        magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+               \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+               -compose Screen -composite $OUT
+
     }
 }
 
@@ -543,9 +597,6 @@ async function generateNameFromSteps(steps) {
             case "roll-vertical":
                 newName = `lifted${parameterOrDefault(parameterCache, step[1])}${newName}`
                 break;
-            case "reverse":
-                newName = `${newName}-reverse`
-                break;
             case "addParameter":
                 parameterCache = parameterCache + step[1]
                 break
@@ -569,6 +620,11 @@ async function decollideName(name) {
 }
 
 async function blendEmojis(emojis) {
+    const emojiHash = emojis.join(":")
+    if (!('exclamation' in emojis)
+     && emojiHash in user_settings) {
+        return user_settings[emojiHash]
+    }
     await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
     const blendSteps = await generateBlendSteps(emojis)
     const workingDirectory = `tmp/${uuidv4()}`
@@ -601,6 +657,8 @@ async function blendEmojis(emojis) {
     newName = await decollideName(newName)
     console.log(newName)
     await uploadEmoji(newName, `${workingDirectory}/${blendSteps.length - 1}`)
+    user_settings[emojiHash] = newName
+    save_settings()
     return newName
 }
 
