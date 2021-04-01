@@ -243,8 +243,47 @@ function generateCommand(step, outfile, infiles) {
     switch (stepType) {
         case 'loadEmoji':
             return `cp input_emoji/${step[1]} ${outfile}`
+
+        // color
         case 'tint':
             return `magick ${infiles[0]} -colorspace gray -fill '${step[1]}' -tint 100 ${outfile}`
+        case 'negate':
+            // invert the colors
+            return `magick convert ${infiles[0]} -negate ${outfile}`
+        case 'monochrome':
+            // transform to pure black and white (like print)
+            return `magick convert ${infiles[0]} -monochrome ${outfile}`
+        case 'sepia-tone':
+            return `magick convert ${infiles[0]} -sepia-tone 80%`
+
+        // geometry
+        case 'rotate90':
+            return `magick convert ${infiles[0]} -rotate 90 ${outfile}`
+        case 'rotate180':
+            return `magick convert ${infiles[0]} -rotate 180 ${outfile}`
+        case 'rotate270':
+            return `magick convert ${infiles[0]} -rotate -90 ${outfile}`
+        case 'flip':
+            // vertical flip
+            return `magick convert ${infiles[0]} -flip ${outfile}`
+        case 'flop':
+            // horizontal flip
+            return `magick convert ${infiles[0]} -flop ${outfile}`
+        case 'shift-left':
+            return `magick convert ${infiles[0]} -roll +2+0 ${outfile}`
+        case 'shift-rigt':
+            return `magick convert ${infiles[0]} -roll -2+0 ${outfile}`
+        case 'shift-up':
+            return `magick convert ${infiles[0]} -roll +0+2 ${outfile}`
+        case 'shift-down':
+            return `magick convert ${infiles[0]} -roll +0-2 ${outfile}`
+
+        // animation
+        case 'reverse':
+            // reverse a gif
+            return `magick convert ${infiles[0]} -reverse ${outfile}`
+
+
     }
 }
 
