@@ -476,6 +476,13 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
+        case 'pinwheel':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            return {
+                command: `magick -dispose previous ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) \( +clone -rotate 45 -extent %[dims] \) ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
 
         // cropping
         case 'crop-horizontal':
