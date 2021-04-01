@@ -1,3 +1,4 @@
+const randomWords = require('random-words');
 const util = require('util')
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -99,6 +100,7 @@ function loadUsers() {
 /////////////////////////
 /// 2020 Code here
 let _emojiListCache = null
+let _usedNames = []
 const _emojiConverter = new EmojiConvertor()
 _emojiConverter.replace_mode = 'img'
 
@@ -117,16 +119,15 @@ const blendMods = {
     'newspaper': ['monochrome'],
 
     // Direction Mods
-    'arrow_right': [],
-    'arrow_up': [],
-    'arrow_down': [],
-    'arrow_left': [],
-    'arrow_up_down': [],
-    'arrows_clockwise': [],
-    'arrow_upper_left': [],
-    'arrow_lower_left': [],
-    'arrow_lower_right': [],
-    'arrow_upper_right': [],
+    'arrow_left': ['roll-horizontal', -25],
+    'arrow_right': ['roll-horizontal', 25],
+    'arrow_up': ['roll-vertical', 25],
+    'arrow_down': ['roll-vertical', -25],
+    'arrows_clockwise': [], // rotate animation
+    'arrow_upper_left': ['roll-diagonal-upper-left', -25],
+    'arrow_upper_right': ['roll-diagonal-upper-right', 25],
+    'arrow_lower_right': ['roll-diagonal-upper-left', 25],
+    'arrow_lower_left': ['roll-diagonal-upper-right', -25],
     'left_right_arrow': ['flop'],
     'arrow_up_down': ['flip'],
     'arrow_forward': [],
@@ -139,7 +140,9 @@ const blendMods = {
     'arrow_right_hook': [],
     'arrow_backward': [],
 
-    // Rotate mods
+    // Crop mods
+    'scissors': ['crop-vertical', 50],
+    'knife': ['crop-horizontal', 50],
 
 
     // Number Mods
@@ -155,7 +158,41 @@ const blendMods = {
     'zero': ['addParameter', 0],
 
     // Style Mods
-    'cubimal_chick': [], // Justin => Fractal Pattern
+    // 'cubimal_chick': [], // Justin => Fractal Pattern
+
+    // meta mods
+    'exclamation': ['regenerate'], // Always regenerate even if hash exists
+
+    // animation mods
+    'rewind': ['reverse'],
+
+    // combination mods
+    'heavy_plus_sign': ['modadd'],
+    'lower_left_paintbrush': ['blend'],
+}
+
+function getColorFromHex(hex) {
+    switch(hex) {
+        case '#2461E9':
+            return 'blue'
+        case '#C33524':
+            return 'red'
+        case '#040404':
+            return 'black'
+        case '#D9D9D9':
+            return 'white'
+        case '#4FAD32':
+            return 'green'
+        case '#6E4224':
+            return 'brown'
+        case '#F09037':
+            return 'orange'
+        case '#AA46F6':
+            return 'purple'
+        case '#E4B43D':
+            return 'yellow'
+    }
+    return 'tinted'
 }
 
 function should_process_this_message(message) {
@@ -213,17 +250,17 @@ function extractEmoji(message) {
     return matches.map(emoji => emoji.slice(1,-1))
 }
 
-async function loadEmojiList() {
+async function loadEmojiList(forced = false) {
     // Use https://api.slack.com/methods/emoji.list
     // to get a list of all emoji in the app.  This should be called
     // any time there is an emoji not already in the cached list.
     //
     // We may want to add a timeout since we are full of trolls,
     // so this would only triger a request every 10 seconds or so.
-    if (_emojiListCache === null) {
+    if (_emojiListCache === null || forced === true) {
         const result = await webClient.emoji.list()
         _emojiListCache = result.emoji
-        setTimeout(() => _emojiListCache = null, 60000)
+        setTimeout(() => _emojiListCache = null, 5000)
     }
     return _emojiListCache
 }
@@ -254,11 +291,13 @@ async function downloadEmojiFile(emoji) {
         // const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const srcMatch = imgTag.match(/src=".*\.png"/)
-        const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
-        await streamPipeline(
-            fs.createReadStream(sourcePath),
-            fs.createWriteStream(`${destinationPath}`)
-        )
+        if(srcMatch) {
+            const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
+            await streamPipeline(
+                fs.createReadStream(sourcePath),
+                fs.createWriteStream(`${destinationPath}`)
+            )
+        }
     }
 }
 
@@ -298,6 +337,15 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
     let newFile = `${workingDirectory}/${stepNumber}`
     let newWorkingFiles = [...workingFiles]
     switch (stepType) {
+        // meta
+        case 'addParameter':
+            // Parameters are strung together / concatinated
+            return {
+                files: newWorkingFiles,
+                cursor,
+                parameter: `${parameter}${step[1]}`,
+            }
+
         case 'loadEmoji':
             // Loading a new emoji progresses the cursor to that emoji
             // Previously loaded emoji are still in the stack
@@ -346,12 +394,12 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
         // geometry
         case 'rotate':
             newWorkingFiles.splice(cursor, 1, newFile)
+            rotationDegrees = parameterOrDefault(parameter, step[1]) % 360
             return {
-                command: `magick convert ${workingFiles[cursor]} -rotate '${step[1]}' ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} -rotate '${rotationDegrees}' ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
-
         case 'flip':
             // vertical flip
             newWorkingFiles.splice(cursor, 1, newFile)
@@ -368,31 +416,53 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
                 files: newWorkingFiles,
                 cursor,
             }
-        case 'shift-left':
+        case 'roll-horizontal':
             newWorkingFiles.splice(cursor, 1, newFile)
+            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
-                command: `magick convert ${workingFiles[cursor]} -roll +2+0 ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%+0 ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
-        case 'shift-right':
+        case 'roll-vertical':
             newWorkingFiles.splice(cursor, 1, newFile)
+            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
-                command: `magick convert ${workingFiles[cursor]} -roll -2+0 ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} -roll +0+${rollPercent}% ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
-        case 'shift-up':
+        case 'roll-diagonal-upper-left':
             newWorkingFiles.splice(cursor, 1, newFile)
+            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
-                command: `magick convert ${workingFiles[cursor]} -roll +0+2 ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%+${rollPercent}% ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
-        case 'shift-down':
+        case 'roll-diagonal-upper-right':
             newWorkingFiles.splice(cursor, 1, newFile)
+            rollPercent = parameterOrDefault(parameter, step[1]) % 100
             return {
-                command: `magick convert ${workingFiles[cursor]} -roll +0-2 ${newFile}`,
+                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%-${rollPercent}% ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
+
+        // cropping
+        case 'crop-horizontal':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            cropPercent = parameterOrDefault(parameter, step[1]) % 100
+            return {
+                command: `magick convert ${workingFiles[cursor]} -crop 100%x100%x${cropPercent}%x0 ${newFile}`,
+                files: newWorkingFiles,
+                cursor,
+            }
+        case 'crop-vertical':
+            newWorkingFiles.splice(cursor, 1, newFile)
+            cropPercent = parameterOrDefault(parameter, step[1]) % 100
+            return {
+                command: `magick convert ${workingFiles[cursor]} -crop 100%x100%x0x${cropPercent}% ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
@@ -408,26 +478,153 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
 
         // compose
-
         case 'modadd':
-            newWorkingFiles.splice(cursor, 2, newFile)
-            const [img1, img2] = workingFiles.slice(-2)
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
+            }
             return {
-                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`,
                 file: newWorkingFiles,
-                cursor
+                cursor: cursor - 1
             }
 
-        case 'addParameter':
-            return {
-                files: newWorkingFiles,
-                cursor,
-                parameter: `${parameter}${step[1]}`,
+        case 'blend':
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
             }
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
+
+        case 'slow-left-right-transition'
+            pieces = workingFiles.slice(cursor - 1, 2)
+            if (pieces.length == 2) {
+                [img1, img2] = pieces
+                newWorkingFiles.splice(cursor - 1, 2, newFile)
+            } else {
+                img1 = workingFiles[cursor]
+                img2 = workingFiles[cursor]
+                newWorkingFiles.splice(cursor, 1, newFile)
+            }
+            return {
+                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
+                file: newWorkingFiles,
+                cursor: cursor - 1
+            }
+
+        magick \( \( $IM1[0] -set option:dims "%wx%h" \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=90 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+               \( \( $IM2[0] -resize %[dims] \) \( +clone \( +clone -alpha extract -colorspace gray \) \( -size %[dims] -define gradient:angle=270 gradient: \) -compose Multiply -delete 0 -composite \) -compose CopyOpacity -composite \)
+               -compose Screen -composite $OUT
+
     }
 }
 
+function combineNames(names) {
+    const maxLength = Math.max(...(names.map(el => el.length)));
+    const charactersPerName = Math.max(3, maxLength / names.length)
+    let newName = ''
+    names.forEach((name, index) => {
+        if (index === names.length - 1) {
+            // Always use the end of the last name
+            end = name.length
+            start = Math.max(0, name.length - charactersPerName)
+        } else if (name.length <= charactersPerName) {
+            start = 0
+            end = name.length
+        } else {
+            start = Math.floor(name.length / names.length) * index
+            end = Math.min(name.length, start + charactersPerName)
+        }
+        part = name.substring(start, end)
+
+        newName = newName + name.substring(start, end)
+    })
+    return newName
+}
+
+async function generateNameFromSteps(steps) {
+    const baseNames = steps
+        .filter(step => step[0] === 'loadEmoji')
+        .map(step => step[1])
+
+    let newName = combineNames(baseNames)
+    let parameterCache = ''
+    steps.forEach(step => {
+        const stepType = step[0]
+        switch (stepType) {
+            case "reverse":
+                newName = newName.split("").reverse().join("");
+                break;
+            case "negate":
+                newName = `${newName}idol`
+                break;
+            case "monochrome":
+                newName = `boring${newName}`
+                break;
+            case "sepia-tone":
+                newName = `old${newName}`
+                break;
+            case "flip":
+                newName = `flipped${newName}`
+                break;
+            case "tint":
+                color = getColorFromHex(step[1])
+                newName = `${color}${newName}`
+                break;
+            case "flop":
+                newName = `flopped${newName}`
+                break;
+            case "rotate":
+                newName = `turnt${parameterOrDefault(parameterCache, step[1])}${newName}`
+                break;
+            case "roll-horizontal":
+                newName = `pushed${parameterOrDefault(parameterCache, step[1])}${newName}`
+                break;
+            case "roll-vertical":
+                newName = `lifted${parameterOrDefault(parameterCache, step[1])}${newName}`
+                break;
+            case "addParameter":
+                parameterCache = parameterCache + step[1]
+                break
+        }
+        if(stepType != 'addParameter') {
+            parameterCache = ''
+        }
+    })
+    return newName
+}
+
+async function decollideName(name) {
+    const existingEmoji = await loadEmojiList(true)
+    if (name in existingEmoji
+    || _emojiConverter.replace_colons(`:${name}:`) !== `:${name}:`){
+        const words = randomWords(2)
+        console.log(words)
+        return `${name}-${words[0]}-${words[1]}`
+    }
+    return name
+}
+
 async function blendEmojis(emojis) {
+    const emojiHash = emojis.join(":")
+    if (!('exclamation' in emojis)
+     && emojiHash in user_settings) {
+        return user_settings[emojiHash]
+    }
     await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
     const blendSteps = await generateBlendSteps(emojis)
     const workingDirectory = `tmp/${uuidv4()}`
@@ -455,9 +652,15 @@ async function blendEmojis(emojis) {
             execSync(commandObject.command)
         }
     })
-    // uploadEmoji('apriltest2', `${workingDirectory}/${blendSteps.length - 1}`)
+
+    let newName = await generateNameFromSteps(blendSteps)
+    newName = await decollideName(newName)
+    console.log(newName)
+    await uploadEmoji(newName, `${workingDirectory}/${blendSteps.length - 1}`)
+    user_settings[emojiHash] = newName
+    save_settings()
+    return newName
 }
-blendEmojis(['tinkfase', 'large_green_square', 'joy', 'large_orange_square'])
 
 ///////////////////////////
 // Process every message on slack
@@ -471,13 +674,13 @@ socketModeClient.on('message', async ({event, body, ack}) => {
                 name: emojis[0],
                 timestamp: event.ts,
             })
-        } else {
+        } else if (emojis.length > 0) {
             const newEmoji = await blendEmojis(emojis)
-            // await webClient.reactions.add({
-            //     channel: event.channel,
-            //     name: newEmoji,
-            //     timestamp: event.ts,
-            // })
+            await webClient.reactions.add({
+                channel: event.channel,
+                name: newEmoji,
+                timestamp: event.ts,
+            })
         }
     }
 });

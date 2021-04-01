@@ -27,6 +27,7 @@
     "jsonfile": "^2.4.0",
     "node-fetch": "^2.6.1",
     "puppeteer": "^8.0.0",
+    "random-words": "^1.1.1",
     "request": "^2.88.2",
     "require-directory": "^2.1.1",
     "sha1": "^1.1.1",
