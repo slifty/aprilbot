@@ -676,8 +676,9 @@ async function blendEmojis(emojis) {
     let workingFiles = []
     let cursor = 0
     fs.mkdirSync(workingDirectory)
+    let index = 0
     const commandObjects = blendSteps.map((step, i) => {
-        const commandObject = generateCommandObject(
+        commandObject = generateCommandObject(
             step,
             i,
             cursor,
@@ -688,14 +689,27 @@ async function blendEmojis(emojis) {
         workingFiles = commandObject.files
         parameter = commandObject.parameter
         cursor = commandObject.cursor
+        index = i
         return commandObject
     })
-    commandObjects.forEach(commandObject => {
-        console.log(commandObject)
-        if(commandObject.command) {
-            execSync(commandObject.command)
-        }
-    })
+    // while(workingFiles.length > 1) {
+    //     commandObject = generateCommandObject(
+    //         // step
+    //         index,
+    //         cursor,
+    //         workingDirectory,
+    //         workingFiles,
+    //     )
+    //     workingFiles = commandObject.files
+    //     cursor = commandObject.cursor
+    //     index = index + 1
+    //     commandObjects.push(commandObject)
+    // }
+    // commandObjects.forEach(commandObject => {
+    //     if(commandObject.command) {
+    //         execSync(commandObject.command)
+    //     }
+    // })
 
     let newName = await generateNameFromSteps(blendSteps)
     newName = await decollideName(newName)
