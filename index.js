@@ -360,7 +360,7 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             // there is no actual command
             return {
                 files: newWorkingFiles,
-                cursor: workingFiles.length,
+                cursor,
             }
 
         // color
@@ -521,83 +521,93 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
 
         // compose
         case 'modadd':
-            pieces = workingFiles.slice(cursor - 1, 2)
+            pieces = workingFiles.slice(cursor - 1, cursor + 1)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
                 newWorkingFiles.splice(cursor - 1, 2, newFile)
+                cursor = cursor - 1
             } else {
                 img1 = workingFiles[cursor]
                 img2 = workingFiles[cursor]
                 newWorkingFiles.splice(cursor, 1, newFile)
+                cursor = cursor - 1
             }
             return {
                 command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`,
                 files: newWorkingFiles,
-                cursor: cursor - 1
+                cursor
             }
 
         case 'blend':
-            pieces = workingFiles.slice(cursor - 1, 2)
+            pieces = workingFiles.slice(cursor - 1, cursor + 1)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
                 newWorkingFiles.splice(cursor - 1, 2, newFile)
+                cursor = cursor - 1
             } else {
                 img1 = workingFiles[cursor]
                 img2 = workingFiles[cursor]
                 newWorkingFiles.splice(cursor, 1, newFile)
+                cursor = cursor - 1
             }
             return {
                 command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
                 files: newWorkingFiles,
-                cursor: cursor - 1
+                cursor
             }
 
         case 'slow-left-right-transition':
-            pieces = workingFiles.slice(cursor - 1, 2)
+            pieces = workingFiles.slice(cursor - 1, cursor + 1)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
                 newWorkingFiles.splice(cursor - 1, 2, newFile)
+                cursor = cursor - 1
             } else {
                 img1 = workingFiles[cursor]
                 img2 = workingFiles[cursor]
                 newWorkingFiles.splice(cursor, 1, newFile)
+                cursor = cursor - 1
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=90 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=270 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
                 files: newWorkingFiles,
-                cursor: cursor - 1
+                cursor
             }
 
         case 'slats-transition':
-            pieces = workingFiles.slice(cursor - 1, 2)
+            pieces = workingFiles.slice(cursor - 1, cursor + 1)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
                 newWorkingFiles.splice(cursor - 1, 2, newFile)
+                cursor = cursor - 1
             } else {
                 img1 = workingFiles[cursor]
                 img2 = workingFiles[cursor]
                 newWorkingFiles.splice(cursor, 1, newFile)
+                cursor = cursor - 1
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
                 files: newWorkingFiles,
-                cursor: cursor - 1
+                cursor
             }
 
         case 'checkerboard-transition':
-            pieces = workingFiles.slice(cursor - 1, 2)
+            pieces = workingFiles.slice(cursor - 1, cursor + 1)
             if (pieces.length == 2) {
                 [img1, img2] = pieces
                 newWorkingFiles.splice(cursor - 1, 2, newFile)
+                cursor = cursor - 1
             } else {
                 img1 = workingFiles[cursor]
                 img2 = workingFiles[cursor]
                 newWorkingFiles.splice(cursor, 1, newFile)
+                cursor = cursor - 1
             }
             return {
                 command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
                 files: newWorkingFiles,
-                cursor: cursor - 1
+                cursor
             }
     }
 }
@@ -722,6 +732,7 @@ async function blendEmojis(emojis) {
      && emojiHash in user_settings) {
         return user_settings[emojiHash]
     }
+    console.log(`Blending: ${emojiHash}`)
     await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
     const blendSteps = await generateBlendSteps(emojis)
     const workingDirectory = `tmp/${uuidv4()}`
@@ -758,6 +769,7 @@ async function blendEmojis(emojis) {
         index = index + 1
         commandObjects.push(commandObject)
     }
+    console.log(commandObjects)
     commandObjects.forEach(commandObject => {
         if(commandObject.command) {
             execSync(commandObject.command)
