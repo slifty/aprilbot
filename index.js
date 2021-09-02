@@ -242,7 +242,7 @@ async function uploadEmoji(name, filePath) {
     }
 
     console.log('Done');
-    //await browser.close();
+    await browser.close();
 }
 
 function extractEmoji(message) {
@@ -258,12 +258,14 @@ async function loadEmojiList(forced = false) {
     // We may want to add a timeout since we are full of trolls,
     // so this would only triger a request every 10 seconds or so.
     if (_emojiListCache === null || forced === true) {
+        console.log("loading emoji)")
         const result = await webClient.emoji.list()
         _emojiListCache = result.emoji
-        setTimeout(() => _emojiListCache = null, 5000)
+        // setTimeout(() => _emojiListCache = null, 60000)
     }
     return _emojiListCache
 }
+loadEmojiList()
 
 function emojiFileExists(emoji) {
     return fs.existsSync(`input_emoji/${emoji}`)
@@ -279,7 +281,6 @@ async function downloadEmojiFile(emoji) {
     const destinationPath = `input_emoji/${resolvedEmoji}`
     if (resolvedEmoji in emojiList) {
         const imageUrl = emojiList[resolvedEmoji]
-        // const extension = path.extname('index.html')
         const destination = fs.createWriteStream(destinationPath)
         const res = await fetch(imageUrl)
         await streamPipeline(res.body, destination)
@@ -290,14 +291,30 @@ async function downloadEmojiFile(emoji) {
         // const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
         const srcMatch = imgTag.match(/src=".*\.png"/)
+        console.log(imgTag)
         if(srcMatch) {
             const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
             await streamPipeline(
                 fs.createReadStream(sourcePath),
                 fs.createWriteStream(`${destinationPath}`)
             )
+        } else {
+            console.log(`NO MATCH: ${emoji}`)
+            console.log(imgTag)
         }
     }
+}
+
+async function storeLocalEmojiFile(emoji, sourcePath) {
+    // Download an emoji file from slack into the input_emoji directory
+    if(emojiFileExists(emoji)) {
+        return
+    }
+    const destinationPath = `input_emoji/${emoji}`
+    await streamPipeline(
+        fs.createReadStream(sourcePath),
+        fs.createWriteStream(`${destinationPath}`)
+    )
 }
 
 async function resolveEmoji(emoji) {
@@ -485,8 +502,12 @@ function generateCommandObject(step, stepNumber, cursor, workingDirectory, worki
             }
         case 'pinwheel':
             newWorkingFiles.splice(cursor, 1, newFile)
+            delay = parameterOrDefault(parameter, 0)
+            frames = Math.max(Math.min(Math.floor(delay / 20 * 16), 16), 8)
+            frameSets = [...Array(frames - 1).keys()].map((v, i) => `\\( +clone -rotate ${Math.floor(360/frames)} -extent %[dims] \\)`)
+            console.log(frameSets)
             return {
-                command: `magick -dispose previous ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) \\( +clone -rotate 45 -extent %[dims] \\) ${newFile}.gif && mv ${newFile}.gif ${newFile}`,
+                command: `magick -dispose previous -delay ${delay} ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set ${frameSets.join(" ")} ${newFile}.gif && mv ${newFile}.gif ${newFile}`,
                 files: newWorkingFiles,
                 cursor,
             }
@@ -683,7 +704,7 @@ async function generateNameFromSteps(steps) {
                 newName = `rainbow${newName}`
                 break;
             case "pinwheel":
-                newName = `spin${newName}`
+                newName = `spin${parameterOrDefault(parameterCache, '')}${newName}`
                 break;
             case "addParameter":
                 parameterCache = parameterCache + step[1]
@@ -693,6 +714,8 @@ async function generateNameFromSteps(steps) {
             parameterCache = ''
         }
     })
+
+    newName = newName.substr(0,80)
     return newName
 }
 
@@ -779,7 +802,9 @@ async function blendEmojis(emojis) {
     let newName = await generateNameFromSteps(blendSteps)
     newName = await decollideName(newName)
     console.log(workingFiles)
+    console.log(newName)
     await uploadEmoji(newName, `${workingFiles[0]}`)
+    await storeLocalEmojiFile(newName, `${workingFiles[0]}`)
     user_settings[emojiHash] = newName
     save_settings()
     return newName
@@ -800,8 +825,9 @@ socketModeClient.on('message', async ({event, body, ack}) => {
         } else if (emojis.length > 0) {
             let attempts = 0
             while(attempts < 2) {
+                let newEmoji = ''
                 try {
-                    const newEmoji = await blendEmojis(emojis)
+                    newEmoji = await blendEmojis(emojis)
                     await webClient.reactions.add({
                         channel: event.channel,
                         name: newEmoji,
@@ -810,7 +836,8 @@ socketModeClient.on('message', async ({event, body, ack}) => {
                     attempts = 90000
                 } catch (e) {
                     emojis.push('exclamation')
-                    console.log("Failed: trying again")
+                    console.log(e)
+                    console.log(`Failed: trying again (${newEmoji})`)
                     attempts = attempts + 1
                 }
             }
