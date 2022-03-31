@@ -1,24 +1,16 @@
-const randomWords = require('random-words');
-const util = require('util')
-const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path')
-const { v4: uuidv4 } = require('uuid');
-const EmojiConvertor = require('emoji-js')
-const streamPipeline = util.promisify(require('stream').pipeline)
+import { words as popularWords } from 'popular-english-words';
+import randomWords from 'random-words';
+import util from 'util'
+import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path'
+import { v4 as uuidv4 } from 'uuid';
 
-var jsonfile = require('jsonfile')
-var command_modules = require('./command_modules');
-const execSync = require('child_process').execSync;
+import jsonfile from 'jsonfile';
 
-const { SocketModeClient, LogLevel } = require('@slack/socket-mode');
-const { WebClient } = require('@slack/web-api');
+import { SocketModeClient, LogLevel } from '@slack/socket-mode';
+import { WebClient } from '@slack/web-api';
 
-const Cookies = require('./emojiUpload/Cookies')
-const Emoji = require('./emojiUpload/Emoji')
-const Input = require('./emojiUpload/Input')
-const puppeteer = require('puppeteer')
-const selectors = require('./emojiUpload/selectors')
 
 const userToken = process.env.V2_BOT_TOKEN;
 const appToken = process.env.SOCKET_TOKEN;
@@ -28,14 +20,62 @@ const socketModeClient = new SocketModeClient({
 const webClient = new WebClient(userToken);
 
 //const main_channel = 'C01S87TUFGB' // test room
+//const main_channel = 'C038ST76EM8' // 2022 test room
 var main_channel = 'C02JZTC78'; // #general
-
+var wordle_channel = 'C039NA2JSAX'; // #wordle
+// const matts_user = 'U04GJ5MGB'; // Matt.
+// const matts_user = 'U02JZTC5W'; // Dan.
+const bots_user_id = 'U01S8AX8J4B';
 var rate_limiter = 0 // how many posts since last rate limit reset
+
+const allEmoji = ['eyes','raised_hands','pray','heavy_plus_sign','clap','bulb','dart','wave','thumbsup','tada','mega','white_circle','large_blue_circle','red_circle','joy','rolling_on_the_floor_laughing','smiley','smile','sweat_smile','wink','blush','yum','sunglasses','heart_eyes','kissing_heart','kissing','kissing_smiling_eyes','kissing_closed_eyes','relaxed','slightly_smiling_face','hugging_face','star-struck','thinking_face','face_with_raised_eyebrow','neutral_face','expressionless','no_mouth','face_with_rolling_eyes','smirk','persevere','disappointed_relieved','open_mouth','zipper_mouth_face','hushed','sleepy','tired_face','sleeping','relieved','stuck_out_tongue','stuck_out_tongue_winking_eye','stuck_out_tongue_closed_eyes','drooling_face','unamused','sweat','pensive','confused','upside_down_face','money_mouth_face','astonished','white_frowning_face','slightly_frowning_face','confounded','disappointed','worried','triumph','cry','sob','frowning','anguished','fearful','weary','exploding_head','grimacing','cold_sweat','scream','flushed','zany_face','dizzy_face','rage','angry','face_with_symbols_on_mouth','mask','face_with_thermometer','face_with_head_bandage','nauseated_face','face_vomiting','sneezing_face','innocent','face_with_cowboy_hat','clown_face','lying_face','shushing_face','face_with_hand_over_mouth','face_with_monocle','nerd_face','smiling_imp','imp','japanese_ogre','japanese_goblin','skull','skull_and_crossbones','host','alien','space_invader','robot_face','hankey','smiley_cat','smile_cat','joy_cat','heart_eyes_cat','smirk_cat','kissing_cat','scream_cat','crying_cat_face','pouting_cat','see_no_evil','hear_no_evil','speak_no_evil','baby','child','boy','girl','adult','man','woman','older_adult','older_man','older_woman','male-doctor','female-doctor','male-student','female-student','male-teacher','male-teacher','male-judge','female-judge','male-farmer','female-farmer','male-cook','female-cook','male-mechanic','female-mechanic','male-factory-worker','female-factory-worker','male-office-worker','female-office-worker','male-scientist','female-scientist','male-technologist','female-technologist','male-singer','female-singer','male-artist','female-artist','male-pilot','female-pilot','male-astronaut','female-astronaut','male-firefighter','female-firefighter','male-police-officer','female-police-officer','male-detective','female-detective','male-guard','female-guard','male-construction-worker','female-construction-worker','prince','princess','man-wearing-turban','woman-wearing-turban','man_with_gua_pi_mao','person_with_headscarf','bearded_person','blond-haired-man','blond-haired-woman','man_in_tuxedo','bride_with_veil','pregnant_woman','breast-feeding','angel','santa','mrs_claus','female_mage','male_mage','female_fairy','male_fairy','female_vampire','male_vampire','mermaid','merman','female_elf','male_elf','female_genie','male_genie','female_zombie','male_zombie','man-frowning','woman-frowning','man-pouting','woman-pouting','man-gesturing-no','woman-gesturing-no','man-gesturing-ok','woman-gesturing-ok','man-tipping-hand','woman-tipping-hand','man-raising-hand','woman-raising-hand','man-bowing','woman-bowing','man-facepalming','woman-facepalming','man-shrugging','woman-shrugging','man-getting-massage','woman-getting-massage','man-getting-haircut','woman-getting-haircut','man-walking','woman-walking','man-running','woman-running','dancer','man_dancing','man-with-bunny-ears-partying','woman-with-bunny-ears-partying','woman_in_steamy_room','man_in_steamy_room','woman_climbing','man_climbing','woman_in_lotus_position','man_in_lotus_position','bath','sleeping_accommodation','sunny','umbrella','cloud','snowflake','snowman','zap','cyclone','foggy','ocean','cat','dog','mouse','hamster','rabbit','wolf','frog','tiger','koala','bear','pig','pig_nose','cow','boar','monkey_face','monkey','horse','racehorse','camel','sheep','elephant','panda_face','snake','bird','baby_chick','hatched_chick','chicken','penguin','turtle','bug','honeybee','ant','beetle','snail','octopus','tropical_fish','fish','whale','dolphin','gift_heart','dolls','school_satchel','mortar_board','flags','fireworks','sparkler','wind_chime','jack_o_lantern','ghost','santa','christmas_tree','gift','bell','no_bell','tanabata_tree','tada','confetti_ball','balloon','crystal_ball','cd','dvd','floppy_disk','camera','video_camera','movie_camera','computer','tv','phone','telephone','telephone_receiver','pager','fax','minidisc','vhs','house','house_with_garden','school','office','post_office','hospital','bank','convenience_store','hotel','wedding','church','department_store','tent','factory','tokyo_tower','japan','mount_fuji','sunrise_over_mountains','sunrise','statue_of_liberty','bridge_at_night','carousel_horse','rainbow','ferris_wheel','fountain','roller_coaster','ship','speedboat','boat','sailboat'];
+
+function arrUtilGetRandom(length) { return Math.floor(Math.random()*(length)); }
+
+function arrUtilGetRandomSample(array, size) {
+    var length = array.length;
+
+    for(var i = size; i--;) {
+        var index = arrUtilGetRandom(length);
+        var temp = array[index];
+        array[index] = array[i];
+        array[i] = temp;
+    }
+
+    return array.slice(0, size);
+}
+
+
 
 ///////////////////////////
 // Set things up to save settings
 var user_settings_file = 'user_settings.json'
-var user_settings = {};
+var GAME_TYPES = {
+    WORDLE: 'wordle',
+    TURDLE: 'turdle',
+    SONGLE: 'songle',
+};
+var MOD_TYPES = {
+    LYRICS: 'lyrics',
+    ONE_LONG: 'oneLong',
+    RANDOM_LENGTH: 'randomLength',
+    SHIFT_LETTERS: 'shiftLetters',
+};
+var user_settings = {
+    userStates: {},
+    globalMods: [],
+    availableMods: [],
+    highScorePost: null,
+};
+
+var answerListFile = 'answerList.json'
+var answerList = [];
+
+var lyricsFile = 'lyrics/final.json'
+var lyrics = [];
+var allWordsFile = 'allWords.json'
+var allWords = [];
+
 function load_settings() {
     if(fs.existsSync(user_settings_file)) {
         jsonfile.readFile(user_settings_file, function(err, obj) {
@@ -44,26 +84,243 @@ function load_settings() {
             }
         })
     }
+    if(fs.existsSync(answerListFile)) {
+        jsonfile.readFile(answerListFile, function(err, obj) {
+            if(!err) {
+                answerList = obj;
+            }
+        })
+    }
+    if(fs.existsSync(lyricsFile)) {
+        jsonfile.readFile(lyricsFile, function(err, obj) {
+            if(!err) {
+                lyrics = obj;
+            }
+        })
+    }
+    if(fs.existsSync(allWordsFile)) {
+        jsonfile.readFile(allWordsFile, function(err, obj) {
+            if(!err) {
+                allWords = obj;
+            }
+        })
+    }
 }
 
 function save_settings() {
-    jsonfile.writeFile(user_settings_file, user_settings, {spaces: 2}, function(err) {
+    fs.copyFileSync(user_settings_file, `${user_settings_file}.backup`);
+    jsonfile.writeFileSync(user_settings_file, user_settings, {spaces: 2}, function(err) {
         if(err) {
             console.error(err);
         }
     });
 }
 
-function set_stage() {
+async function set_stage() {
     // Only set the stage if user settings don't exist
     if(!fs.existsSync(user_settings_file)) {
         // Give the introductory message
-        webClient.chat.postMessage({
-            text: "HAPPY APRIL FOOLS 2021\n\rSince things are so intense, this year's April Fools is designed to be simple AND give you a little control over your slack experience.\n\rNo longer do you need to worry about how the group will react to your posts: just include the emoji response you want and aprilbot will grace your post with a reaction :tada:.\r\n",
+        await webClient.chat.postMessage({
+            text: `:wordle_correct_h_0::wordle_present_a_0::wordle_incorrect_p_0::wordle_incorrect_p_0::wordle_present_y_0::wordle_blank_0::wordle_present_a_0::wordle_correct_p_0::wordle_correct_r_0::wordle_incorrect_i_0::wordle_present_l_0::wordle_blank_0::wordle_incorrect_f_0::wordle_incorrect_o_0::wordle_correct_o_0::wordle_correct_l_0::wordle_present_s_0:
+
+Please join #wordle to participate in the fun!
+
+Guess the *WORDLE* in "six" tries.
+
+Each guess must be a valid "five"-letter "word".  Hit the enter button to submit.
+
+If your stumped you can click the "X" to give up, but you will never know the truth.
+
+After each guess, the color of the emoji responses will change to show how close your guess was to the word.`,
             channel: main_channel,
         })
+        await generateHighScorePost();
         save_settings();
     }
+}
+
+async function generateHighScorePost() {
+    const highScorePost = await webClient.chat.postMessage({
+        text: "this will be the high score table",
+        channel: main_channel,
+    })
+    await webClient.reactions.add({
+        channel: highScorePost.channel,
+        name: 'thinking_face',
+        timestamp: highScorePost.ts,
+    })
+    await webClient.reactions.add({
+        channel: highScorePost.channel,
+        name: 'thinkspin',
+        timestamp: highScorePost.ts,
+    })
+    await webClient.reactions.add({
+        channel: highScorePost.channel,
+        name: 'thinkface-zalgo',
+        timestamp: highScorePost.ts,
+    })
+    await webClient.reactions.add({
+        channel: highScorePost.channel,
+        name: 'notes',
+        timestamp: highScorePost.ts,
+    })
+    await webClient.reactions.add({
+        channel: highScorePost.channel,
+        name: 'x',
+        timestamp: highScorePost.ts,
+    })
+
+    user_settings.highScorePost = highScorePost;
+    save_settings();
+}
+
+function getEmojiForWordleRank(rank) {
+    switch(rank) {
+        case 1:
+            return '🥇';
+        case 2:
+            return '🥈';
+        case 3:
+            return '🥉';
+        case 4:
+            return '👑';
+        case 5:
+            return '🏵️';
+        case 6:
+            return '🪙';
+        case 7:
+            return '😆';
+        case 8:
+            return '😂';
+        case 9:
+            return '🤣';
+        default:
+            return '😭';
+    }
+}
+
+function getEmojiForTurdleRank(rank) {
+    switch(rank) {
+        case 1:
+            return '🐢';
+        default:
+            return '💩';
+    }
+}
+
+function getEmojiForRank(rank, gameType) {
+    switch (gameType) {
+        case GAME_TYPES.WORDLE:
+            return getEmojiForWordleRank(rank);
+        case GAME_TYPES.TURDLE:
+            return getEmojiForTurdleRank(rank);
+    }
+}
+
+// from https://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number
+function ordinal_suffix_of(i) {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + "st";
+    }
+    if (j == 2 && k != 12) {
+        return i + "nd";
+    }
+    if (j == 3 && k != 13) {
+        return i + "rd";
+    }
+    return i + "th";
+}
+
+
+function generateHighScoresTable(scores, header, borderChar, footer, gameType) {
+    const highScoreRows = scores.sort((a, b) => {
+        if (a.score < b.score) {
+            return -1;
+        }
+        if (a.score > b.score) {
+            return 1;
+        }
+        if (a.score === b.score) {
+            return 0;
+        }
+    }).reverse().map((row, index) => {
+        const rank = index + 1;
+        const ordinalRank = ordinal_suffix_of(rank);
+        const emblem = getEmojiForRank(rank, gameType);
+        const userName = row.user ? row.user.name : 'unknown';
+        const score = row.score ? row.score : -1;
+        const firstRow = `${ordinalRank}`;
+        const secondRow = `${userName}`.slice(0, 20);
+        const thirdRow = `${score} pts`;
+        const firstBuffer = ' '.repeat(4 - firstRow.length);
+        const secondBuffer = ' '.repeat(20 - secondRow.length);
+        const thirdBuffer = ' '.repeat(10 - thirdRow.length);
+        return `${emblem} ${firstBuffer}${firstRow}   ${secondRow}${secondBuffer}${thirdBuffer}${thirdRow}`;
+    })
+    const tableText = `${header}
+${borderChar}  ${highScoreRows.join(`  ${borderChar}\n${borderChar}  `)}  ${borderChar}
+${footer}`;
+    return tableText;
+}
+
+function getScores(gameType) {
+    const activeUserIds = Object.keys(user_settings.userStates);
+    const scores = activeUserIds.map((userId) => {
+        const user = userDict[userId];
+        const userState = user_settings.userStates[userId];
+        return {
+            user,
+            score: userState.scores[gameType],
+        }
+    }).filter((score) => score.score !== undefined);
+    return scores
+}
+
+// 🟥 🟧 🟨 🟩 🟦 🟪 ⬛️ ⬜️ 🟫
+async function updateHighScorePost() {
+    if (!user_settings.highScorePost) {
+        await generateHighScorePost();
+    }
+    const wordleScores = getScores(GAME_TYPES.WORDLE);
+    const wordleHeader = `
+**********************************************
+#               WORDLE SCORES                #
+# ------------------------------------------ #`;
+    const wordleFooter = `**********************************************`;
+    const wordleHighScoresTable = generateHighScoresTable(
+        wordleScores,
+        wordleHeader,
+        '#',
+        wordleFooter,
+        GAME_TYPES.WORDLE,
+    )
+
+    const turdleScores = getScores(GAME_TYPES.TURDLE);
+    const turdleHeader = `
+
+**********************************************
+#               TURDLE SCORES                #
+# ------------------------------------------ #`;
+    const turdleFooter = `**********************************************`;
+    const turdleHighScoresTable = turdleScores.length === 0 ? `` : generateHighScoresTable(
+        turdleScores,
+        turdleHeader,
+        '#',
+        turdleFooter,
+        GAME_TYPES.TURDLE,
+    )
+    const modeInstructions = `
+
+\`The emoji below add personal mods ... do NOT click zalgo.\``;
+    const highScoreTables = `\`\`\`${wordleHighScoresTable}${turdleHighScoresTable}\`\`\`${modeInstructions}`;
+
+    webClient.chat.update({
+        text: highScoreTables,
+        channel: user_settings.highScorePost.channel,
+        ts: user_settings.highScorePost.ts,
+    })
 }
 
 ///////////////////////////
@@ -82,732 +339,740 @@ function recordUserMessage(userId, text) {
 }
 
 /////////////////////////////
-// Load up the markov chains
+// Set up user information
 var userDict = {};
-var botDict = {};
 
-function loadUsers() {
-    admin_bot.getUsers().then(function(data) {
-        var users = data["members"];
-        for(var x in users) {
-            var user = users[x];
-            userDict[user.id] = user;
-        }
+async function loadUsers() {
+    const result = await webClient.users.list();
+    result.members.forEach((user) => {
+        userDict[user['id']] = user;
     });
-}
-
-/////////////////////////
-/// 2020 Code here
-let _emojiListCache = null
-let _usedNames = []
-const _emojiConverter = new EmojiConvertor()
-_emojiConverter.replace_mode = 'img'
-
-const blendMods = {
-    // Color Mods
-    'large_blue_square': ['tint', '#2461E9'],
-    'large_red_square': ['tint', '#C33524'],
-    'large_black_square': ['tint', '#040404'],
-    'large_white_square': ['tint', '#D9D9D9'],
-    'large_green_square': ['tint', '#4FAD32'],
-    'large_brown_square': ['tint', '#6E4224'],
-    'large_orange_square': ['tint', '#F09037'],
-    'large_purple_square': ['tint', '#AA46F6'],
-    'large_yellow_square': ['tint', '#E4B43D'],
-    'ericidol': ['negate'],
-    'newspaper': ['monochrome'],
-    'film_frames': ['sepia-tone'],
-    'bulb': ['soft-glow'],
-
-    // Direction Mods
-    'arrow_left': ['roll-horizontal', -25],
-    'arrow_right': ['roll-horizontal', 25],
-    'arrow_up': ['roll-vertical', 25],
-    'arrow_down': ['roll-vertical', -25],
-    'arrow_upper_left': ['roll-diagonal-upper-left', -25],
-    'arrow_upper_right': ['roll-diagonal-upper-right', 25],
-    'arrow_lower_right': ['roll-diagonal-upper-left', 25],
-    'arrow_lower_left': ['roll-diagonal-upper-right', -25],
-    'left_right_arrow': ['flop'],
-    'arrow_up_down': ['flip'],
-    'arrow_forward': ['squish-right'],
-    'arrow_heading_down': ['rotate', '90'],
-    'arrow_heading_up': ['rotate', '-90'],
-    'arrow_backward': ['squish-left'],
-
-    // Crop mods
-    // 'scissors': ['crop-vertical', 50],
-    // 'knife': ['crop-horizontal', 50],
-
-
-    // Number Mods
-    'one': ['addParameter', 1],
-    'two': ['addParameter', 2],
-    'three': ['addParameter', 3],
-    'four': ['addParameter', 4],
-    'five': ['addParameter', 5],
-    'six': ['addParameter', 6],
-    'seven': ['addParameter', 7],
-    'eight': ['addParameter', 8],
-    'nine': ['addParameter', 9],
-    'zero': ['addParameter', 0],
-
-    // Style Mods
-    // 'cubimal_chick': [], // Justin => Fractal Pattern
-
-    // meta mods
-    'exclamation': ['regenerate'], // Always regenerate even if hash exists
-
-    // animation mods
-    'rewind': ['reverse'],
-    'rainbow': ['rainbowify'],
-    'spiral': ['pinwheel'],
-
-    // combination mods
-    'heavy_plus_sign': ['modadd'],
-    'lower_left_paintbrush': ['blend'],
-    'hourglass_flowing_sand': ['slow-left-right-transition'],
-    'fence': ['slats-transition'],
-    'checkered_flag': ['checkerboard-transition'],
-}
-
-function getColorFromHex(hex) {
-    switch(hex) {
-        case '#2461E9':
-            return 'blue'
-        case '#C33524':
-            return 'red'
-        case '#040404':
-            return 'black'
-        case '#D9D9D9':
-            return 'white'
-        case '#4FAD32':
-            return 'green'
-        case '#6E4224':
-            return 'brown'
-        case '#F09037':
-            return 'orange'
-        case '#AA46F6':
-            return 'purple'
-        case '#E4B43D':
-            return 'yellow'
-    }
-    return 'tinted'
 }
 
 function should_process_this_message(message) {
     return message.type == "message"
         && !message.hidden
         && !message.upload
+        && !message.bot_id
+        && message.channel == wordle_channel
 }
 
-async function uploadEmoji(name, filePath) {
-    const cookies = await Cookies.get();
-    const browser = await puppeteer.launch({
-        headless: true,
+function should_process_this_reaction(reaction) {
+    return (reaction.type == "reaction_added"
+            || reaction.type == "reaction_removed")
+        && reaction.user !== bots_user_id
+        && user_settings.highScorePost
+        && reaction.item.channel === user_settings.highScorePost.channel
+        && reaction.item.ts === user_settings.highScorePost.ts;
+}
+
+/////////////////////////////
+// Wordle logic
+function isTurd(str) {
+    return [
+        ':turd:',
+        ':poo:',
+        ':poop:',
+        ':hankey:',
+    ].includes(str);
+}
+
+function isTurtle(str) {
+    return [
+        ':turtle:',
+    ].includes(str);
+}
+
+function isRealWord(str) {
+    return allWords.includes(str);
+}
+
+function getWords(str) {
+    return str
+        .replace(/\s+/g, ' ')
+        .split(' ');
+}
+
+function cleanGuess(guess) {
+    return guess.replace(/[^\w\s]/g,'').toLowerCase().replace(/_/g,'');
+}
+
+function generateRandomEmoji(length) {
+    return arrUtilGetRandomSample(allEmoji, length);
+}
+
+function generateResults(guess, mask, mods) {
+    // const randomEmojiPool = generateRandomEmoji(mask.length);
+    return mask.map((result, index) => {
+        var character = guess.charAt(index);
+        if (character !== character.toLowerCase()) {
+            const realCharacter = character.toLowerCase();
+            if (mods[MOD_TYPES.SHIFT_LETTERS]) {
+                return `wordle_error_${realCharacter}_${index}`;
+            } else {
+                return `wordle_blank_${index}`;
+            }
+        }
+        if (character === ' ') {
+            character = 'blank';
+        }
+        switch (result) {
+            case '_':
+                return `wordle_blank_${index}`;
+            case '?':
+                return `wordle_present_${character}_${index}`;
+            case '-':
+                return `wordle_incorrect_${character}_${index}`;
+            case '+':
+                return `wordle_correct_${character}_${index}`;
+        }
     })
-    const credentials = {
-        email: process.env.SLACK_EMAIL,
-        password: process.env.SLACK_PASSWORD,
-    }
-
-    const page = await browser.newPage()
-    const files = [filePath]
-    const teamname = 'thegpf'
-
-    if (cookies) {
-      // Set cookies on browser load to avoid logging in over again.
-      await Cookies.restore(page);
-    }
-
-    await page.goto(`https://${teamname}.slack.com/customize/emoji`);
-
-    // Check if we need to sign in.
-    if (await page.$(selectors.LOGIN.EMAIL)) {
-      await Input.type(selectors.LOGIN.EMAIL, credentials.email, page);
-      await Input.type(selectors.LOGIN.PASSWORD, credentials.password, page);
-      await page.click(selectors.LOGIN.SUBMIT);
-      await page.waitForNavigation();
-    }
-
-    // Save new cookies after login
-    Cookies.save(await page.cookies(), teamname);
-
-    for (let i = 0; i < files.length; i++) {
-      const file = path.parse(files[i]);
-      console.log('Processing ' + file.base);
-      try {
-          await Emoji.upload(file, name, page);
-      } catch (e) {}
-    }
-
-    console.log('Done');
-    await browser.close();
 }
 
-function extractEmoji(message) {
-    const matches = message.text.match(/\:[^\s\:]+\:/g)??[]
-    return matches.map(emoji => emoji.slice(1,-1))
-}
-
-async function loadEmojiList(forced = false) {
-    // Use https://api.slack.com/methods/emoji.list
-    // to get a list of all emoji in the app.  This should be called
-    // any time there is an emoji not already in the cached list.
-    //
-    // We may want to add a timeout since we are full of trolls,
-    // so this would only triger a request every 10 seconds or so.
-    if (_emojiListCache === null || forced === true) {
-        console.log("loading emoji)")
-        const result = await webClient.emoji.list()
-        _emojiListCache = result.emoji
-        // setTimeout(() => _emojiListCache = null, 60000)
+function cleanWordleGuess(guess, answer, mods, skipRealWordCheck = false) {
+    const answerLength = answer.length;
+    var words = getWords(
+        applyModsToGuess(
+            mods,
+            cleanGuess(guess),
+        ),
+    );
+    if (!mods[MOD_TYPES.LYRICS]) {
+        words = [words[0]];
     }
-    return _emojiListCache
-}
-loadEmojiList()
-
-function emojiFileExists(emoji) {
-    return fs.existsSync(`input_emoji/${emoji}`)
-}
-
-async function downloadEmojiFile(emoji) {
-    // Download an emoji file from slack into the input_emoji directory
-    const resolvedEmoji = await resolveEmoji(emoji)
-    if(emojiFileExists(resolvedEmoji)) {
-        return
-    }
-    const emojiList = await loadEmojiList()
-    const destinationPath = `input_emoji/${resolvedEmoji}`
-    if (resolvedEmoji in emojiList) {
-        const imageUrl = emojiList[resolvedEmoji]
-        const destination = fs.createWriteStream(destinationPath)
-        const res = await fetch(imageUrl)
-        await streamPipeline(res.body, destination)
-    } else {
-        // This is not a custom emoji, so we need to
-        // pull it from the file in this repo https://github.com/iamcal/emoji-data
-        // which should be cloned into a sibling directory to this project's root.
-        // const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
-        const imgTag = _emojiConverter.replace_colons(`:${resolvedEmoji}:`)
-        const srcMatch = imgTag.match(/src=".*\.png"/)
-        console.log(imgTag)
-        if(srcMatch) {
-            const sourcePath = `../emoji-data/${srcMatch[0].slice(17, -1)}`
-            await streamPipeline(
-                fs.createReadStream(sourcePath),
-                fs.createWriteStream(`${destinationPath}`)
-            )
+    var cleanedGuess = words.map((word) => {
+        if(isRealWord(word) || mods[MOD_TYPES.LYRICS] || word == answer || (skipRealWordCheck && mods[MOD_TYPES.RANDOM_LENGTH])) {
+            return word;
         } else {
-            console.log(`NO MATCH: ${emoji}`)
-            console.log(imgTag)
+            return word.toUpperCase() // ucase means wrong '.'.repeat(word.length); // . will mean "filler" in the answer key
+        }
+    })
+    .join(' ');
+
+    if (!mods[MOD_TYPES.LYRICS]
+    && !mods[MOD_TYPES.RANDOM_LENGTH]) {
+        if (cleanedGuess.length !== answerLength) {
+            return fillWordleGuess('', answerLength);
         }
     }
+
+    cleanedGuess = cleanedGuess.slice(0, answerLength)
+    return fillWordleGuess(cleanedGuess, answerLength);
 }
 
-async function storeLocalEmojiFile(emoji, sourcePath) {
-    // Download an emoji file from slack into the input_emoji directory
-    if(emojiFileExists(emoji)) {
-        return
+function fillWordleGuess(cleanedGuess, answerLength) {
+    if (answerLength > cleanedGuess.length) {
+        const fillString = '_'.repeat(answerLength - cleanedGuess.length);
+        return `${cleanedGuess}${fillString}`;
     }
-    const destinationPath = `input_emoji/${emoji}`
-    await streamPipeline(
-        fs.createReadStream(sourcePath),
-        fs.createWriteStream(`${destinationPath}`)
+    return cleanedGuess
+}
+
+function cleanTurdleGuess(guess) {
+    const words = getWords(guess);
+    if (!words[0].startsWith(':')
+    || !words[0].endsWith(':'))
+        return '';
+    return words[0];
+}
+
+function getRandomTurdle() {
+    const turdOrTurtle = Math.random();
+    if (turdOrTurtle > .5) {
+        return 'turd';
+    } else {
+        return 'turtle';
+    }
+}
+
+function generateNewTurdleAnswer(userId) {
+    const answer = getRandomTurdle()
+    return answer;
+}
+
+function getRandomWord(pattern = /.*/) {
+    const filteredWords = allWords.filter(d => pattern.test(d));
+    const randomIndex = Math.floor(Math.random() * filteredWords.length);
+    return filteredWords[randomIndex];
+}
+
+function getNextRealWord(words, index) {
+    const newIndex = (index + 1) % words.length;
+    const nextWord = words[newIndex];
+    if (!isRealWord(nextWord)) {
+        return getNextRealWord(words, newIndex);
+    }
+    return nextWord;
+}
+
+function getRandomPopularWord(pattern = /.*/) {
+    const filteredWords = popularWords.getMostPopularFilter(2000, d => pattern.test(d));
+    const randomIndex = Math.floor(Math.random() * filteredWords.length);
+    const randomWord = filteredWords[randomIndex]
+    if (!isRealWord(randomWord)) {
+        return getNextRealWord(filteredWords, randomIndex);
+    }
+    return randomWord;
+}
+
+function getRandomLyric() {
+    return lyrics[Math.floor(Math.random() * lyrics.length)];
+}
+
+function generateNewWordleAnswer(userId) {
+    const userState = getUserState(userId);
+    const mods = userState.mods;
+
+    var wordLength = 5
+    if (mods[MOD_TYPES.RANDOM_LENGTH]) {
+        wordLength = 5 + Math.ceil(Math.random() * 5);
+    }
+    if (mods[MOD_TYPES.ONE_LONG]) { // this is now a dict swap
+        wordLength += 1
+    }
+    const wordPatternString = `^.{${wordLength}}$`;
+    const wordPattern = new RegExp(wordPatternString);
+    if (mods[MOD_TYPES.LYRICS]) {
+        return getRandomLyric();
+    } else if(mods[MOD_TYPES.ONE_LONG]) {
+        return getRandomWord(wordPattern);
+    } else {
+        return getRandomPopularWord(wordPattern);
+    }
+}
+
+function getModNames(mods) {
+    const modNames = [];
+    if (mods[MOD_TYPES.LYRICS]) {
+        modNames.push("Lyrics");
+    } else {
+        if(mods[MOD_TYPES.ONE_LONG]) {
+            modNames.push("Obscure");
+        }
+        if(mods[MOD_TYPES.RANDOM_LENGTH]) {
+            modNames.push("Longer");
+        }
+    }
+    if(mods[MOD_TYPES.SHIFT_LETTERS]) {
+        modNames.push("ZALGO!!");
+    }
+    return modNames;
+}
+
+async function reportNewGame(userId, gameType) {
+    if (gameType === GAME_TYPES.TURDLE) {
+        return;
+    }
+    const userState = getUserState(userId);
+    const username = userDict[userId].name;
+    const mods = userState.currentGames[GAME_TYPES.WORDLE].mods;
+    var modsString = ''
+    const modNames = getModNames(mods);
+    if(modNames.length > 0) {
+        modsString = ` (mods: ${modNames.join(', ')})`;
+    }
+    const report = `New wordle game generated for ${username}.${modsString}`;
+
+    await webClient.chat.postMessage({
+        text: report,
+        channel: wordle_channel,
+    })
+}
+
+function generateNewGame(userId, gameType) {
+    const newGame = {
+        type: gameType,
+        answer: '',
+        guesses: [],
+        mods: {},
+    }
+
+    switch (gameType) {
+        case GAME_TYPES.TURDLE:
+            newGame.answer = generateNewTurdleAnswer(userId);
+            break;
+        case GAME_TYPES.WORDLE:
+            newGame.answer = generateNewWordleAnswer(userId);
+    }
+
+    const userState = getUserState(userId);
+    newGame.mods = {...userState.mods};
+    userState.currentGames[gameType] = newGame;
+    setUserState(userState, userId);
+    reportNewGame(userId, gameType);
+    return newGame;
+}
+
+function generateUserState(userId) {
+    const baseState = {
+        currentGames: {},
+        scores: {},
+        mods: {},
+    }
+    return baseState;
+}
+
+function getUserState(userId) {
+    if (!(userId in user_settings.userStates)) {
+        user_settings.userStates[userId] = generateUserState(userId); // this MUST happen first or endless loop.
+        generateNewGame(userId, GAME_TYPES.WORDLE);
+        generateNewGame(userId, GAME_TYPES.TURDLE);
+    }
+    return user_settings.userStates[userId];
+}
+
+function setUserState(userState, userId) {
+    user_settings.userStates[userId] = userState;
+    save_settings();
+}
+
+function modifyScore(modification, userId, gameType) {
+    const userState = getUserState(userId);
+    if (!(gameType in userState.scores)) {
+        userState.scores[gameType] = 0;
+    }
+    userState.scores[gameType] += modification;
+    setUserState(userState, userId);
+}
+
+function registerGuess(guess, userId, gameType) {
+    const userState = getUserState(userId);
+    userState.currentGames[gameType].guesses.push(guess);
+    setUserState(userState, userId);
+}
+
+function checkTurdleGuess(guess, userId) {
+    // TODO: this has to be modded to support multi-character guesses
+    // since turdle will clearly need to expand.
+    const userState = getUserState(userId);
+    const answer = userState.currentGames[GAME_TYPES.TURDLE].answer;
+    const cleanedGuess = cleanTurdleGuess(guess);
+    const responseEmoji = []
+    if (isTurtle(cleanedGuess)) {
+        if (answer === 'turtle') {
+            responseEmoji.push('turdle_correct_turtle');
+        } else {
+            responseEmoji.push('turdle_incorrect_turtle');
+        }
+    } else if (isTurd(cleanedGuess)) {
+        if (answer === 'turd') {
+            responseEmoji.push('turdle_correct_turd');
+        } else {
+            responseEmoji.push('turdle_incorrect_turd');
+        }
+    } else {
+        if (answer === 'turd') {
+            responseEmoji.push('turdle_present_turd');
+        } else {
+            responseEmoji.push('turdle_present_turtle');
+        }
+    }
+    return responseEmoji;
+}
+
+function caesarCipherByOne(message) {
+    var alphabet = "abcdefghijklmnopqrstuvwxyz";
+    var newalpha = "zabcdefghijklmnopqrstuvwxy";
+    let result = "";
+    message = message.toLowerCase();
+    for (let i = 0; i < message.length; i++){
+        let index = alphabet.indexOf(message[i]);
+        if(index === -1) {
+            result += " ";
+        } else {
+            result += newalpha[index];
+        }
+    }
+    return result;
+}
+
+function applyModsToGuess(mods, guess) {
+    if (mods[MOD_TYPES.SHIFT_LETTERS]) {
+        return caesarCipherByOne(guess)
+    }
+    return guess;
+}
+
+function checkWordleGuess(guess, userId, isRootCheck = false) {
+    const userState = getUserState(userId);
+    const answer = userState.currentGames[GAME_TYPES.WORDLE].answer;
+    const answerCells = answer.split('');
+    const cleanedGuess = cleanWordleGuess(
+        guess,
+        answer,
+        userState.currentGames[GAME_TYPES.WORDLE].mods,
+        !isRootCheck,
+    );
+
+    // Find the correct characters
+    const startingMask = cleanedGuess.split('');
+    const correctMask = startingMask.map((character, index) => {
+        if (answerCells[index] === character) {
+            answerCells[index] = '+';
+            return '+';
+        } else {
+            return character;
+        }
+    });
+
+    // Find the present / absent characters
+    const finalMask = correctMask.map((character, index) => {
+        if (character === '.'
+         || character === '+'
+         || character === '_') {
+            return character;
+        }
+        const characterIndex = answerCells.indexOf(character);
+        if (characterIndex === -1) {
+            return '-';
+        } else {
+            answerCells[characterIndex] = '?';
+            return '?';
+        }
+    })
+
+    const results = generateResults(
+        cleanedGuess,
+        finalMask,
+        userState.currentGames[GAME_TYPES.WORDLE].mods,
+    )
+
+    if (!isWordleEmpty(results) && isRootCheck) {
+        registerGuess(cleanedGuess, userId, GAME_TYPES.WORDLE);
+    }
+
+    return results;
+}
+
+function isWordleVictory(wordleResult) {
+    return wordleResult.reduce(
+        (isVictory, result) => isVictory && result.includes('_correct'),
+        true,
     )
 }
 
-async function resolveEmoji(emoji) {
-    const emojiList = await loadEmojiList()
-    if (emoji in emojiList
-     && emojiList[emoji].startsWith('alias:')) {
-        return emojiList[emoji].slice(6)
-    } else {
-        return emoji
+function isWordleEmpty(wordleResult) {
+    return wordleResult.reduce(
+        (isEmpty, result) => isEmpty && result.includes('_blank_'),
+        true,
+    )
+}
+
+function isTurdleGuess(guess) {
+    return cleanTurdleGuess(guess) !== '';
+}
+
+function calculateWordleScore(userId) {
+    const userState = getUserState(userId);
+    const {
+        mods,
+        answer,
+        guesses,
+    } = userState.currentGames[GAME_TYPES.WORDLE];
+
+    var score = answer.length + 1;
+    if (!mods[MOD_TYPES.LYRICS]
+     && mods[MOD_TYPES.ONE_LONG]) {
+        score = score * 2
     }
-}
-
-async function generateBlendSteps(emojis, allowFirstMod=false) {
-    const blendSteps = await emojis.reduce(async (stepsPromise, emoji) => {
-        const steps = await stepsPromise
-        const resolvedEmoji = await resolveEmoji(emoji)
-
-        // Note: the first emoji is never treated as a mod.
-        if (resolvedEmoji in blendMods
-         && (steps.length > 0 || allowFirstMod === true)) {
-            steps.push(blendMods[resolvedEmoji])
-        } else {
-            steps.push(['loadEmoji', resolvedEmoji])
-        }
-        return steps
-    }, [])
-    return blendSteps
-}
-
-function parameterOrDefault(parameter, value) {
-    return parameter===''?value:parameter
-}
-
-function generateCommandObject(step, stepNumber, cursor, workingDirectory, workingFiles, parameter='') {
-    const stepType = step[0]
-    let newFile = `${workingDirectory}/${stepNumber}`
-    let newWorkingFiles = [...workingFiles]
-    switch (stepType) {
-        // meta
-        case 'addParameter':
-            // Parameters are strung together / concatinated
-            return {
-                files: newWorkingFiles,
-                cursor,
-                parameter: `${parameter}${step[1]}`,
-            }
-
-        case 'loadEmoji':
-            // Loading a new emoji progresses the cursor to that emoji
-            // Previously loaded emoji are still in the stack
-            newWorkingFiles.push(newFile)
-            return {
-                command: `cp input_emoji/${step[1]} ${newFile}`,
-                files: newWorkingFiles,
-                cursor: workingFiles.length,
-            }
-
-        case 'regenerate':
-            // This is a special mod to force regeneration of emoji
-            // there is no actual command
-            return {
-                files: newWorkingFiles,
-                cursor,
-            }
-
-        // color
-        case 'tint':
-            // Adjusting the tint of the current emoji replaces it in the stack
-            newWorkingFiles.splice(cursor, 1, newFile)
-            tintAmount = Math.min(255, parameterOrDefault(parameter, 100))
-            return {
-                command: `magick ${workingFiles[cursor]} -colorspace gray -fill '${step[1]}' -tint ${tintAmount} ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'negate':
-            // invert the colors
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -negate ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-            return `magick convert ${infiles[0]} -negate ${outfile}`
-        case 'monochrome':
-            // transform to pure black and white (like print)
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -monochrome ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'sepia-tone':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -sepia-tone 80% ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'soft-glow':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} \\( +clone -blur 0x3 \\) -compose Lighten -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'rainbowify':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `./pseudocolor -i 32 -d 8 ${workingFiles[cursor]} ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-
-        // geometry
-        case 'rotate':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            rotationDegrees = parameterOrDefault(parameter, step[1]) % 360
-            return {
-                command: `magick convert ${workingFiles[cursor]} -rotate '${rotationDegrees}' ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'flip':
-            // vertical flip
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -flip ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'flop':
-            // horizontal flip
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -flop ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'roll-horizontal':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%+0 ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'roll-vertical':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -roll +0+${rollPercent}% ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'roll-diagonal-upper-left':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%+${rollPercent}% ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'roll-diagonal-upper-right':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            rollPercent = parameterOrDefault(parameter, step[1]) % 100
-            return {
-                command: `magick convert ${workingFiles[cursor]} -roll +${rollPercent}%-${rollPercent}% ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'squish-left':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity West -background none -extent %[dims] ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'squish-right':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick ${workingFiles[cursor]} -set option:dims "%wx%h" -resize 50%x100% -alpha Set -gravity East -background none -extent %[dims] ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-        case 'pinwheel':
-            newWorkingFiles.splice(cursor, 1, newFile)
-            delay = parameterOrDefault(parameter, 0)
-            frames = Math.max(Math.min(Math.floor(delay / 20 * 16), 16), 8)
-            frameSets = [...Array(frames - 1).keys()].map((v, i) => `\\( +clone -rotate ${Math.floor(360/frames)} -extent %[dims] \\)`)
-            console.log(frameSets)
-            return {
-                command: `magick -dispose previous -delay ${delay} ${workingFiles[cursor]}[0] -gravity Center -set option:dims "%wx%h" -background none -alpha Set ${frameSets.join(" ")} ${newFile}.gif && mv ${newFile}.gif ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-
-        // cropping
-        // case 'crop-horizontal':
-        //     newWorkingFiles.splice(cursor, 1, newFile)
-        //     cropPercent = parameterOrDefault(parameter, step[1]) % 100
-        //     return {
-        //         command: `magick convert ${workingFiles[cursor]} -set option:dims "%wx%h" -crop 100%x50%x0x0 -fill white ${newFile}`,
-        //         files: newWorkingFiles,
-        //         cursor,
-        //     }
-        // case 'crop-vertical':
-        //     newWorkingFiles.splice(cursor, 1, newFile)
-        //     cropPercent = parameterOrDefault(parameter, step[1]) % 100
-        //     return {
-        //         command: `magick convert ${workingFiles[cursor]} \\( +clone -fill white -colorize 100 -write mpr:bg +delete \\) -crop 50%x100%x0x0 ${newFile}`,
-        //         files: newWorkingFiles,
-        //         cursor,
-        //     }
-
-        // animation
-        case 'reverse':
-            // reverse a gif
-            newWorkingFiles.splice(cursor, 1, newFile)
-            return {
-                command: `magick convert ${workingFiles[cursor]} -reverse ${newFile}`,
-                files: newWorkingFiles,
-                cursor,
-            }
-
-        // compose
-        case 'modadd':
-            pieces = workingFiles.slice(cursor - 1, cursor + 1)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-                cursor = cursor - 1
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-                cursor = cursor - 1
-            }
-            return {
-                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose ModulusAdd -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor
-            }
-
-        case 'blend':
-            pieces = workingFiles.slice(cursor - 1, cursor + 1)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-                cursor = cursor - 1
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-                cursor = cursor - 1
-            }
-            return {
-                command: `magick ${img1} -set option:dims "%wx%h" ${img2} -resize "%[dims]" -compose Screen -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor
-            }
-
-        case 'slow-left-right-transition':
-            pieces = workingFiles.slice(cursor - 1, cursor + 1)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-                cursor = cursor - 1
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-                cursor = cursor - 1
-            }
-            return {
-                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=90 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] -define gradient:angle=270 gradient: \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor
-            }
-
-        case 'slats-transition':
-            pieces = workingFiles.slice(cursor - 1, cursor + 1)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-                cursor = cursor - 1
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-                cursor = cursor - 1
-            }
-            return {
-                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( example_mask.png -resize %[dims] -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor
-            }
-
-        case 'checkerboard-transition':
-            pieces = workingFiles.slice(cursor - 1, cursor + 1)
-            if (pieces.length == 2) {
-                [img1, img2] = pieces
-                newWorkingFiles.splice(cursor - 1, 2, newFile)
-                cursor = cursor - 1
-            } else {
-                img1 = workingFiles[cursor]
-                img2 = workingFiles[cursor]
-                newWorkingFiles.splice(cursor, 1, newFile)
-                cursor = cursor - 1
-            }
-            return {
-                command: `magick \\( \\( ${img1}[0] -set option:dims "%wx%h" \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) \\( \\( ${img2}[0] -resize %[dims] \\) \\( +clone \\( +clone -alpha extract -colorspace gray \\) \\( -size %[dims] pattern:checkerboard -auto-level -negate \\) -compose Multiply -delete 0 -composite \\) -compose CopyOpacity -composite \\) -compose Screen -composite ${newFile}`,
-                files: newWorkingFiles,
-                cursor
-            }
+    if (mods[MOD_TYPES.SHIFT_LETTERS]) {
+        score = score * 3;
     }
+    score = score - guesses.length
+    return Math.max(0, score);
 }
 
-function combineNames(names) {
-    const maxLength = Math.max(...(names.map(el => el.length)));
-    const charactersPerName = Math.max(3, maxLength / names.length)
-    let newName = ''
-    names.forEach((name, index) => {
-        if (index === names.length - 1) {
-            // Always use the end of the last name
-            end = name.length
-            start = Math.max(0, name.length - charactersPerName)
-        } else if (name.length <= charactersPerName) {
-            start = 0
-            end = name.length
-        } else {
-            start = Math.floor(name.length / names.length) * index
-            end = Math.min(name.length, start + charactersPerName)
-        }
-        part = name.substring(start, end)
+function getFlavor(score) {
+    if (score == 0) {
+        return ' ... how embarrassing.';
+    }
+    if (score == 1) {
+        return ' better than nothing, right?';
+    }
+    return ''
+}
 
-        newName = newName + name.substring(start, end)
+async function reportWordleResult(score, userId) {
+    const userState = getUserState(userId);
+    const username = userDict[userId].name;
+    const guesses = userState.currentGames[GAME_TYPES.WORDLE].guesses;
+    const flavor = getFlavor(score);
+    const report = `${username} just got ${score} points (${guesses.length} guesses: \`${guesses.join('` / `')}\`)${flavor}`;
+
+    await webClient.chat.postMessage({
+        text: report,
+        channel: wordle_channel,
     })
-    return newName
 }
 
-async function generateNameFromSteps(steps) {
-    const baseNames = steps
-        .filter(step => step[0] === 'loadEmoji')
-        .map(step => step[1])
+function getCharacterFromResultEmoji(emoji) {
+    const parts = emoji.split('_');
+    return parts.at(-2);
+}
 
-    let newName = combineNames(baseNames)
-    let parameterCache = ''
-    steps.forEach(step => {
-        const stepType = step[0]
-        switch (stepType) {
-            case "reverse":
-                newName = newName.split("").reverse().join("");
-                break;
-            case "negate":
-                newName = `${newName}idol`
-                break;
-            case "monochrome":
-                newName = `boring${newName}`
-                break;
-            case "sepia-tone":
-                newName = `old${newName}`
-                break;
-            case "soft-glow":
-                newName = `glowing${newName}`
-                break;
-            case "flip":
-                newName = `flipped${newName}`
-                break;
-            case "tint":
-                color = getColorFromHex(step[1])
-                newName = `${color}${newName}`
-                break;
-            case "flop":
-                newName = `flopped${newName}`
-                break;
-            case "rotate":
-                newName = `turnt${parameterOrDefault(parameterCache, step[1])}${newName}`
-                break;
-            case "roll-horizontal":
-                newName = `pushed${parameterOrDefault(parameterCache, step[1])}${newName}`
-                break;
-            case "roll-vertical":
-                newName = `lifted${parameterOrDefault(parameterCache, step[1])}${newName}`
-                break;
-            case "rainbowify":
-                newName = `rainbow${newName}`
-                break;
-            case "pinwheel":
-                newName = `spin${parameterOrDefault(parameterCache, '')}${newName}`
-                break;
-            case "addParameter":
-                parameterCache = parameterCache + step[1]
-                break
-        }
-        if(stepType != 'addParameter') {
-            parameterCache = ''
-        }
+function isPresentResultEmoji(emoji) {
+    return emoji.includes('_present');
+}
+
+function isIncorrectResultEmoji(emoji) {
+    return emoji.includes('_incorrect');
+}
+
+function isCorrectResultEmoji(emoji) {
+    return emoji.includes('_correct');
+}
+
+function generateKeyboard(correct, present, incorrect) {
+    const letters = {
+        'a': 'wordle_unchecked_a',
+        'b': 'wordle_unchecked_b',
+        'c': 'wordle_unchecked_c',
+        'd': 'wordle_unchecked_d',
+        'e': 'wordle_unchecked_e',
+        'f': 'wordle_unchecked_f',
+        'g': 'wordle_unchecked_g',
+        'h': 'wordle_unchecked_h',
+        'i': 'wordle_unchecked_i',
+        'j': 'wordle_unchecked_j',
+        'k': 'wordle_unchecked_k',
+        'l': 'wordle_unchecked_l',
+        'm': 'wordle_unchecked_m',
+        'n': 'wordle_unchecked_n',
+        'o': 'wordle_unchecked_o',
+        'p': 'wordle_unchecked_p',
+        'q': 'wordle_unchecked_q',
+        'r': 'wordle_unchecked_r',
+        's': 'wordle_unchecked_s',
+        't': 'wordle_unchecked_t',
+        'u': 'wordle_unchecked_u',
+        'v': 'wordle_unchecked_v',
+        'w': 'wordle_unchecked_w',
+        'x': 'wordle_unchecked_x',
+        'y': 'wordle_unchecked_y',
+        'z': 'wordle_unchecked_z',
+        'blank': 'wordle_unchecked_blank',
+    }
+    Array.from(incorrect).forEach((character) => {
+        letters[character] = `wordle_incorrect_${character}_0`;
+    })
+    Array.from(present).forEach((character) => {
+        letters[character] = `wordle_present_${character}_0`;
+    })
+    Array.from(correct).forEach((character) => {
+        letters[character] = `wordle_correct_${character}_0`;
     })
 
-    newName = newName.substr(0,80)
-    return newName
+    return `:${letters['q']}: :${letters['w']}: :${letters['e']}: :${letters['r']}: :${letters['t']}: :${letters['y']}: :${letters['u']}: :${letters['i']}: :${letters['o']}: :${letters['p']}:
+:${letters['a']}: :${letters['s']}: :${letters['d']}: :${letters['f']}: :${letters['g']}: :${letters['h']}: :${letters['j']}: :${letters['k']}: :${letters['l']}:
+:${letters['z']}: :${letters['x']}: :${letters['c']}: :${letters['v']}: :${letters['b']}: :${letters['n']}: :${letters['m']}:`
 }
 
-async function decollideName(name) {
-    const existingEmoji = await loadEmojiList(true)
-    if (name in existingEmoji
-    || _emojiConverter.replace_colons(`:${name}:`) !== `:${name}:`){
-        const words = randomWords(2)
-        return `${name}-${words[0]}-${words[1]}`
+function generateWordKnowledgeReport(userId, gameType) {
+    if (gameType !== GAME_TYPES.WORDLE) {
+        return '';
     }
-    return name
+    const userState = getUserState(userId);
+    const game = userState.currentGames[GAME_TYPES.WORDLE];
+    const guesses = [...game.guesses];
+
+    const correctLetters = new Set();
+    const presentLetters = new Set();
+
+    const incorrectLetters = new Set();
+    const results = guesses.map((guess) => {
+        const result = checkWordleGuess(guess, userId);
+        result.map((emoji) => {
+            let character = getCharacterFromResultEmoji(emoji);
+            if (character === ' ') {
+                character = 'blank';
+            }
+            if (isCorrectResultEmoji(emoji)) {
+                correctLetters.add(character);
+            } else if (isPresentResultEmoji(emoji)) {
+                presentLetters.add(character);
+            } else if (isIncorrectResultEmoji(emoji)) {
+                incorrectLetters.add(character);
+            }
+        });
+        return result;
+    });
+
+    const keyboard = generateKeyboard(
+        correctLetters,
+        presentLetters,
+        incorrectLetters,
+    )
+
+    const resultLines = results.map(result => result.map(emoji => `:${emoji}:`).join(''))
+    return `${resultLines.join('\n\r')}
+
+${keyboard}`;
 }
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
-}
-
-async function generateRandomComposeStep() {
-    const randomInt = getRandomInt(5)
-    switch (randomInt) {
-        case 0:
-            return (await generateBlendSteps(['checkered_flag'], true))[0]
-        case 1:
-            return (await generateBlendSteps(['heavy_plus_sign'], true))[0]
-        case 2:
-            return (await generateBlendSteps(['lower_left_paintbrush'], true))[0]
-        case 3:
-            return (await generateBlendSteps(['hourglass_flowing_sand'], true))[0]
-        case 4:
-            return (await generateBlendSteps(['fence'], true))[0]
-    }
-}
-
-async function blendEmojis(emojis) {
-    const emojiHash = emojis.join(":")
-    if (!emojis.includes('exclamation')
-     && emojiHash in user_settings) {
-        return user_settings[emojiHash]
-    }
-    console.log(`Blending: ${emojiHash}`)
-    await Promise.all(emojis.map(async (emoji) => { await downloadEmojiFile(emoji) }))
-    const blendSteps = await generateBlendSteps(emojis)
-    const workingDirectory = `tmp/${uuidv4()}`
-    let parameter = ''
-    let workingFiles = []
-    let cursor = 0
-    fs.mkdirSync(workingDirectory)
-    let index = 0
-    const commandObjects = blendSteps.map((step, i) => {
-        commandObject = generateCommandObject(
-            step,
-            i,
-            cursor,
-            workingDirectory,
-            workingFiles,
-            parameter
-        )
-        workingFiles = commandObject.files
-        parameter = commandObject.parameter
-        cursor = commandObject.cursor
-        index = i
-        return commandObject
+function postKnowledgeReport(report, event) {
+    webClient.chat.postMessage({
+        text: report,
+        channel: event.channel,
+        thread_ts: event.ts,
     })
-    while(workingFiles.length > 1) {
-        commandObject = generateCommandObject(
-            await generateRandomComposeStep(),
-            index,
-            cursor,
-            workingDirectory,
-            workingFiles,
-        )
-        workingFiles = commandObject.files
-        cursor = commandObject.cursor
-        index = index + 1
-        commandObjects.push(commandObject)
-    }
-    console.log(commandObjects)
-    commandObjects.forEach(commandObject => {
-        if(commandObject.command) {
-            execSync(commandObject.command)
-        }
-    })
+}
 
-    let newName = await generateNameFromSteps(blendSteps)
-    newName = await decollideName(newName)
-    console.log(workingFiles)
-    console.log(newName)
-    await uploadEmoji(newName, `${workingFiles[0]}`)
-    await storeLocalEmojiFile(newName, `${workingFiles[0]}`)
-    user_settings[emojiHash] = newName
-    save_settings()
-    return newName
+function checkGuess(guess, userId, event) {
+    const gameType = isTurdleGuess(guess)
+        ? GAME_TYPES.TURDLE
+        : GAME_TYPES.WORDLE
+
+    switch (gameType) {
+        case GAME_TYPES.TURDLE:
+            const turdleResult = checkTurdleGuess(
+                guess,
+                userId,
+            );
+            if (isWordleVictory(turdleResult)) {
+                modifyScore(1, userId, GAME_TYPES.TURDLE);
+                generateNewGame(userId, GAME_TYPES.TURDLE);
+            } else {
+                generateNewGame(userId, GAME_TYPES.TURDLE);
+                // modifyScore(-1, userId, GAME_TYPES.TURDLE);
+            }
+            return turdleResult;
+        case GAME_TYPES.WORDLE:
+            const wordleResult = checkWordleGuess(
+                guess,
+                userId,
+                true,
+            );
+            if (isWordleVictory(wordleResult)) {
+                const wordleScore = calculateWordleScore(userId);
+                reportWordleResult(wordleScore, userId);
+                modifyScore(
+                    wordleScore,
+                    userId,
+                    GAME_TYPES.WORDLE
+                );
+                generateNewGame(userId, GAME_TYPES.WORDLE);
+            } else {
+                if (!isWordleEmpty(wordleResult)) {
+                    const knowledgeReport = generateWordKnowledgeReport(userId,  GAME_TYPES.WORDLE);
+                    postKnowledgeReport(knowledgeReport, event)
+                    //modifyScore(-1, userId, GAME_TYPES.WORDLE);
+                }
+            }
+            if (isWordleEmpty(wordleResult)) {
+                return [];
+            }
+            return wordleResult;
+    }
+    return [];
+}
+
+/*
+{
+  client_msg_id: 'b2745e2a-2a80-4782-bfc3-b1bf0cd07d17',
+  type: 'message',
+  text: 'test',
+  user: 'U02JZTC5W',
+  ts: '1648264331.921279',
+  team: 'T02JZTC5Q',
+  blocks: [ { type: 'rich_text', block_id: 'RG33h', elements: [Array] } ],
+  channel: 'C01S87TUFGB',
+  event_ts: '1648264331.921279',
+  channel_type: 'group'
+}
+ */
+async function processMessage(event) {
+    const {
+        text,
+        user,
+    } = event;
+    const results = checkGuess(text, user, event)
+    updateHighScorePost();
+    results.reduce(
+        async (previous, result) => {
+            await previous
+            try {
+                await webClient.reactions.add({
+                    channel: event.channel,
+                    name: result,
+                    timestamp: event.ts,
+                })
+            } catch {}
+            await new Promise(r => setTimeout(r, 50))
+        },
+        Promise.resolve(),
+    )
+}
+
+function enableModForUser(mod, userId) {
+    const userState = getUserState(userId);
+    userState.mods[mod] = true;
+    setUserState(userState, userId);
+}
+
+function disableModForUser(mod, userId) {
+    const userState = getUserState(userId);
+    userState.mods[mod] = false;
+    setUserState(userState, userId);
+}
+
+function resetWordle(userId) {
+    generateNewGame(userId, GAME_TYPES.WORDLE);
+}
+
+async function processReactionAdd(event) {
+    const {
+        reaction,
+        user,
+    } = event;
+    switch (reaction) {
+        case "notes": // lyrics
+            enableModForUser(MOD_TYPES.LYRICS, user);
+            resetWordle(user);
+            return;
+        case "thinking_face": // add one letter
+            enableModForUser(MOD_TYPES.ONE_LONG, user);
+            resetWordle(user);
+            return;
+        case "thinkspin": // add one-to-five letters
+            enableModForUser(MOD_TYPES.RANDOM_LENGTH, user);
+            resetWordle(user);
+            return;
+        case "thinkface-zalgo": // shift the letters by one in your guess
+            enableModForUser(MOD_TYPES.SHIFT_LETTERS, user);
+            resetWordle(user);
+            return;
+        case "x": // reset current games
+            resetWordle(user);
+            return;
+    }
+}
+
+async function processReactionRemove(event) {
+    const {
+        reaction,
+        user,
+    } = event;
+    switch (reaction) {
+        case "notes": // lyrics
+            disableModForUser(MOD_TYPES.LYRICS, user);
+            resetWordle(user);
+            return;
+        case "thinking_face": // add one letter
+            disableModForUser(MOD_TYPES.ONE_LONG, user);
+            resetWordle(user);
+            return;
+        case "thinkspin": // add one-to-five letters
+            disableModForUser(MOD_TYPES.RANDOM_LENGTH, user);
+            resetWordle(user);
+            return;
+        case "thinkface-zalgo": // shift the letters by one in your guess
+            disableModForUser(MOD_TYPES.SHIFT_LETTERS, user);
+            resetWordle(user);
+            return;
+        case "x": // reset current games
+            resetWordle(user);
+            return;
+    }
 }
 
 ///////////////////////////
@@ -815,48 +1080,36 @@ async function blendEmojis(emojis) {
 socketModeClient.on('message', async ({event, body, ack}) => {
     await ack();
     if(should_process_this_message(event)) {
-        const emojis = extractEmoji(event)
-        if (emojis.length === 1) {
-            await webClient.reactions.add({
-                channel: event.channel,
-                name: emojis[0],
-                timestamp: event.ts,
-            })
-        } else if (emojis.length > 0) {
-            let attempts = 0
-            while(attempts < 2) {
-                let newEmoji = ''
-                try {
-                    newEmoji = await blendEmojis(emojis)
-                    await webClient.reactions.add({
-                        channel: event.channel,
-                        name: newEmoji,
-                        timestamp: event.ts,
-                    })
-                    attempts = 90000
-                } catch (e) {
-                    emojis.push('exclamation')
-                    console.log(e)
-                    console.log(`Failed: trying again (${newEmoji})`)
-                    attempts = attempts + 1
-                }
-            }
-        }
+        processMessage(event);
+    }
+});
+
+socketModeClient.on('reaction_added', async ({event, body, ack}) => {
+    await ack();
+    if(should_process_this_reaction(event)) {
+        processReactionAdd(event);
+    }
+});
+
+socketModeClient.on('reaction_removed', async ({event, body, ack}) => {
+    await ack();
+    if(should_process_this_reaction(event)) {
+        processReactionRemove(event);
     }
 });
 
 (async () => {
   // Connect to Slack
   await socketModeClient.start();
-  console.log("APRIL HAS STARTED!")
+  await loadUsers();
+  load_settings();
+  console.log("APRIL HAS STARTED!");
+  set_stage();
 })();
 
 // Set the stage
-set_stage();
-//loadUsers();
 
 // Load settings
-load_settings();
 
 // reset rate limit every 10 seconds
 // function resetRateLimit() {

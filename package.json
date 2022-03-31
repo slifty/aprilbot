@@ -23,14 +23,17 @@
   "dependencies": {
     "@slack/socket-mode": "^1.0.2",
     "@slack/web-api": "^6.1.0",
+    "an-array-of-english-words": "^2.0.0",
     "emoji-js": "^3.5.0",
     "jsonfile": "^2.4.0",
     "node-fetch": "^2.6.1",
+    "popular-english-words": "^1.0.2",
     "puppeteer": "^8.0.0",
     "random-words": "^1.1.1",
     "request": "^2.88.2",
     "require-directory": "^2.1.1",
     "sha1": "^1.1.1",
     "uuid": "^8.3.2"
-  }
+  },
+  "type": "module"
 }
