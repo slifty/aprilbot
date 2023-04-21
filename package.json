@@ -28,12 +28,11 @@
     "jsonfile": "^2.4.0",
     "node-fetch": "^2.6.1",
     "popular-english-words": "^1.0.2",
-    "puppeteer": "^8.0.0",
     "random-words": "^1.1.1",
     "request": "^2.88.2",
-    "require-directory": "^2.1.1",
     "sha1": "^1.1.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "ws": "^8.13.0"
   },
   "type": "module"
 }
