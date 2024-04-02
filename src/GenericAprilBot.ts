@@ -1,11 +1,15 @@
 import { SocketModeClient } from '@slack/socket-mode';
 import { WebClient } from '@slack/web-api';
+import { getLogger } from './logger';
+import type { Member } from '@slack/web-api/dist/types/response/UsersListResponse';
 import type {
 	SocketModeEventPayload,
 	ReactionAddedEvent,
 	ReactionRemovedEvent,
 	MessageEvent,
 } from './types';
+
+const logger = getLogger();
 
 abstract class GenericAprilBot {
 	private readonly userToken: string;
@@ -15,6 +19,8 @@ abstract class GenericAprilBot {
 	protected readonly socketModeClient: SocketModeClient;
 
 	protected readonly webClient: WebClient;
+
+	protected users: Member[] = [];
 
 	constructor(userToken: string, appToken: string) {
 		this.userToken = userToken;
@@ -26,10 +32,22 @@ abstract class GenericAprilBot {
 	}
 
 	public async start(): Promise<void> {
+		this.users = await this.loadUsers();
 		this.socketModeClient.on('message', this.handleMessage);
 		this.socketModeClient.on('reaction_added', this.handleReactionAdded);
 		this.socketModeClient.on('reaction_removed', this.handleReactionRemoved);
 		await this.socketModeClient.start();
+	}
+
+	private async loadUsers(): Promise<Member[]> {
+		logger.debug('Loading users...');
+		const result = await this.webClient.users.list({});
+		if (!result.ok || result.members === undefined) {
+			logger.error(result.error);
+			throw new Error('Unable to load users.');
+		}
+		logger.debug(`${result.members?.length} Users loaded.`);
+		return result.members;
 	}
 
 	protected abstract handleMessage: (
