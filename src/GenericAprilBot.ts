@@ -1,5 +1,11 @@
 import { SocketModeClient } from '@slack/socket-mode';
 import { WebClient } from '@slack/web-api';
+import type {
+	SocketModeEventPayload,
+	ReactionAddedEvent,
+	ReactionRemovedEvent,
+	MessageEvent,
+} from './types';
 
 abstract class GenericAprilBot {
 	private readonly userToken: string;
@@ -19,9 +25,24 @@ abstract class GenericAprilBot {
 		this.webClient = new WebClient(this.userToken);
 	}
 
-	public async start() {
+	public async start(): Promise<void> {
+		this.socketModeClient.on('message', this.handleMessage);
+		this.socketModeClient.on('reaction_added', this.handleReactionAdded);
+		this.socketModeClient.on('reaction_removed', this.handleReactionRemoved);
 		await this.socketModeClient.start();
 	}
+
+	protected abstract handleMessage: (
+		args: SocketModeEventPayload<MessageEvent>,
+	) => void;
+
+	protected abstract handleReactionAdded: (
+		args: SocketModeEventPayload<ReactionAddedEvent>,
+	) => void;
+
+	protected abstract handleReactionRemoved: (
+		args: SocketModeEventPayload<ReactionRemovedEvent>,
+	) => void;
 }
 
 export { GenericAprilBot };
