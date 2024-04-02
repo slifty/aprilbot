@@ -14,8 +14,8 @@
     "type": "git",
     "url": "git+https://github.com/slifty/aprilbot.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Daniel Schultz",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/slifty/aprilbot/issues"
   },
