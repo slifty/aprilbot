@@ -1,28 +1,28 @@
 {
-  "name": "aprilbot",
-  "version": "0.0.2024",
-  "description": "A Slack bot for legitimate purposes",
-  "scripts": {
+	"name": "aprilbot",
+	"version": "0.0.2024",
+	"description": "A Slack bot for legitimate purposes",
+	"scripts": {
 		"format": "prettier . --write",
 		"lint": "npm run lint:ts && npm run lint:prettier",
 		"lint:ts": "eslint ./src --ext .ts",
 		"lint:prettier": "prettier . --check",
-    "start": "ts-node src/index.ts"
-  },
-  "engines": {
-    "node": "20"
-  },
+		"start": "ts-node src/index.ts"
+	},
+	"engines": {
+		"node": "20"
+	},
 	"type": "commonjs",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/slifty/aprilbot.git"
-  },
-  "author": "Daniel Schultz",
-  "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/slifty/aprilbot/issues"
-  },
-  "homepage": "https://github.com/slifty/aprilbot#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/slifty/aprilbot.git"
+	},
+	"author": "Daniel Schultz",
+	"license": "AGPL-3.0-or-later",
+	"bugs": {
+		"url": "https://github.com/slifty/aprilbot/issues"
+	},
+	"homepage": "https://github.com/slifty/aprilbot#readme",
 	"devDependencies": {
 		"@tsconfig/node20": "^20.1.4",
 		"@types/node": "^20.12.2",
@@ -38,9 +38,9 @@
 		"ts-node": "^10.9.2",
 		"typescript": "^5.4.3"
 	},
-  "dependencies": {
-    "@slack/socket-mode": "^1.0.2",
-    "@slack/web-api": "^6.1.0",
+	"dependencies": {
+		"@slack/socket-mode": "^1.0.2",
+		"@slack/web-api": "^6.1.0",
 		"require-env-variable": "^4.0.2"
-  }
+	}
 }
