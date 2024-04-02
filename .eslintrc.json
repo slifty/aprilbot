@@ -16,6 +16,13 @@
 		"import/prefer-default-export": "off",
 		"import/no-default-export": "error",
 		"@typescript-eslint/prefer-readonly-parameter-types": "off",
+		"class-methods-use-this": "off",
+		"@typescript-eslint/class-methods-use-this": [
+			"error",
+			{
+				"ignoreOverrideMethods": true
+			}
+		],
 		"import/order": [
 			"error",
 			{
