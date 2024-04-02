@@ -1,38 +1,46 @@
 {
-  "name": "aprilbot",
-  "version": "0.0.0",
-  "description": "A Slack bot for legitimate purposes",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index"
-  },
-  "engines": {
-    "node": ">= 5.9.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/slifty/aprilbot.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/slifty/aprilbot/issues"
-  },
-  "homepage": "https://github.com/slifty/aprilbot#readme",
-  "dependencies": {
-    "@slack/socket-mode": "^1.0.2",
-    "@slack/web-api": "^6.1.0",
-    "an-array-of-english-words": "^2.0.0",
-    "emoji-js": "^3.5.0",
-    "jsonfile": "^2.4.0",
-    "node-fetch": "^2.6.1",
-    "popular-english-words": "^1.0.2",
-    "random-words": "^1.1.1",
-    "request": "^2.88.2",
-    "sha1": "^1.1.1",
-    "uuid": "^8.3.2",
-    "ws": "^8.13.0"
-  },
-  "type": "module"
+	"name": "aprilbot",
+	"version": "0.0.2024",
+	"description": "A Slack bot for legitimate purposes",
+	"scripts": {
+		"format": "prettier . --write",
+		"lint": "npm run lint:ts && npm run lint:prettier",
+		"lint:ts": "eslint ./src --ext .ts",
+		"lint:prettier": "prettier . --check",
+		"start": "ts-node src/index.ts"
+	},
+	"engines": {
+		"node": "20"
+	},
+	"type": "commonjs",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/slifty/aprilbot.git"
+	},
+	"author": "Daniel Schultz",
+	"license": "AGPL-3.0-or-later",
+	"bugs": {
+		"url": "https://github.com/slifty/aprilbot/issues"
+	},
+	"homepage": "https://github.com/slifty/aprilbot#readme",
+	"devDependencies": {
+		"@tsconfig/node20": "^20.1.4",
+		"@types/node": "^20.12.2",
+		"@typescript-eslint/eslint-plugin": "^7.4.0",
+		"@typescript-eslint/parser": "^7.4.0",
+		"eslint": "^8.57.0",
+		"eslint-config-airbnb-base": "^15.0.0",
+		"eslint-config-airbnb-typescript": "^18.0.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-sort-exports": "^0.9.1",
+		"prettier": "3.2.5",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.4.3"
+	},
+	"dependencies": {
+		"@slack/socket-mode": "^1.0.2",
+		"@slack/web-api": "^6.1.0",
+		"require-env-variable": "^4.0.2"
+	}
 }
