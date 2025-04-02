@@ -1,8 +1,16 @@
-user_settings.json
-threadcoin.json
-game_state.json
-config.json
-normality.json
-node_modules/*
-.env
-users
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.env*
+!.env.example
+
+.langgraph_api
+
