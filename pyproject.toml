@@ -1,0 +1,16 @@
+[project]
+name = "slack-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain-mcp-adapters>=0.0.6",
+    "langchain-openai>=0.3.11",
+    "langgraph>=0.3.22",
+    "langgraph-cli[inmem]>=0.1.82",
+    "langsmith>=0.3.22",
+    "openai>=1.70.0",
+    "pydantic>=2.11.1",
+    "ruff>=0.11.2",
+]
